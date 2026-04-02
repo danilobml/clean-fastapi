@@ -4,7 +4,7 @@ from fastapi import Depends
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
-from errors.custom import FailedDbInitError  # type: ignore
+from ..errors.custom import FailedDbInitError
 
 load_dotenv()
 
