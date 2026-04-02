@@ -8,9 +8,9 @@ from ..db.core import Base
 
 
 class Priority(enum.Enum):
-    low = 0
-    medium = 1
-    high = 2
+    low = "low"
+    medium = "medium"
+    high = "high"
 
 
 class Job(Base):
