@@ -10,7 +10,7 @@ load_dotenv()
 db_url = os.getenv("DB_URL")
 
 if not db_url:
-    raise RuntimeError("Failed to initialize database. The URL string variable is required.")
+    raise RuntimeError("Failed to initialize database. The DB_URL environment variable is required.")
 
 engine = create_engine(db_url)
 
