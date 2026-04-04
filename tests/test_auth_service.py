@@ -17,7 +17,7 @@ def test_authenticate_user_success(db_session):
     db_session.add(user)
     db_session.commit()
 
-    assert authenticate_user("dan@test.com", "hashed", db_session) is True
+    assert authenticate_user("dan@test.com", "hashed", db_session) == user
 
 def test_verify_token():
     token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QG1haWwuY29tIiwiaWQiOiJhNGM4YTcyZS0zZjFkLTRiNmEtYjhjNS02YzBiOGYyZDdlOWEiLCJleHAiOjE3NzUzMzgwNTV9.cqg67JEakWaiZq8pCOw3PJ76zTlacznVHcgnHAZvWic"
