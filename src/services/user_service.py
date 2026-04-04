@@ -21,7 +21,7 @@ def register_user(request: RegisterUserRequest, db: Session) -> None:
         db.add(user)
         db.commit()
     except Exception as e:
-        logging.warning(f"Failed to register user with email {user.email}: {e}")
+        logging.warning(f"Failed to register user with email {request.email}: {e}")
         raise
 
 def get_user(id: UUID, db: Session) -> User:
