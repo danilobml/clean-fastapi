@@ -2,7 +2,6 @@ import logging
 from uuid import UUID
 
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import Session
 
 from src.entities.user import User
 from src.models.requests import RegisterUserRequest

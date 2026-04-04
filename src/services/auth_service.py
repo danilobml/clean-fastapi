@@ -8,6 +8,7 @@ import jwt
 from jwt.exceptions import PyJWTError
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
+from dotenv import load_dotenv
 from fastapi import Depends
 
 from ..db.core import Session
@@ -15,6 +16,7 @@ from ..entities.user import User
 from ..models.token import TokenData
 from ..errors.custom import AuthenticationError
 
+load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
