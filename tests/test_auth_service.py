@@ -17,7 +17,7 @@ def test_register_user(db_session):
     try:
         register_user(request, db_session) 
     except Exception as e:
-        pytest.fail("register_user test failed: {e}")
+        pytest.fail(f"register_user test failed: {e}")
     
     user = db_session.query(User).filter(User.email == request.email).one()
     
