@@ -1,8 +1,5 @@
-import pytest
-
 from src.entities.user import User
 from src.models.token import TokenData
-from src.models.requests import RegisterUserRequest
 from src.services.auth_service import (
     authenticate_user,
     get_hashed_password,
