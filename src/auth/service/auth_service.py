@@ -10,11 +10,14 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from dotenv import load_dotenv
 from fastapi import Depends
+from sqlalchemy.exc import NoResultFound
 
-from ..db.core import Session
-from ..entities.user import User
-from ..models.token import TokenData, Token
-from ..errors.custom import AuthenticationError
+from src.auth.model.requests import RegisterUserRequest
+
+from ...db.core import Session
+from ...entities.user import User
+from ..model.token import TokenData, Token
+from ...errors.custom import AuthenticationError
 
 load_dotenv()
 
@@ -30,6 +33,28 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 
 bcrypt_context = CryptContext(schemes=['bcrypt'])
 oauth_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
+
+def register_user(request: RegisterUserRequest, db: Session) -> None:
+    try:
+        user = User(
+            first_name=request.first_name,
+            last_name=request.last_name,
+            email=request.email,
+            hashed_password=get_hashed_password(request.password),
+        )
+        db.add(user)
+        db.commit()
+    except Exception as e:
+        logging.warning(f"Failed to register user with email {request.email}: {e}")
+        raise
+
+def get_user(id: UUID, db: Session) -> User:
+    try:
+        user = db.query(User).filter(User.id == id).one()
+        return user
+    except NoResultFound as e:
+        logging.warning(f"No user found with id {id}: {e}")
+        raise
 
 def get_hashed_password(password: str) -> str:
     return bcrypt_context.hash(password)
