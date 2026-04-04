@@ -7,13 +7,13 @@ from typing import Annotated
 import jwt
 from jwt.exceptions import PyJWTError
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from dotenv import load_dotenv
 from fastapi import Depends
 
 from ..db.core import Session
 from ..entities.user import User
-from ..models.token import TokenData
+from ..models.token import TokenData, Token
 from ..errors.custom import AuthenticationError
 
 load_dotenv()
@@ -38,14 +38,14 @@ def get_hashed_password(password: str) -> str:
 def verify_password(password: str, hashed_password: str) -> bool:
     return bcrypt_context.verify(password, hashed_password)
 
-def authenticate_user(email: str, password: str, db: Session) -> bool:    
+def authenticate_user(email: str, password: str, db: Session) -> User | None:
     user = db.query(User).filter(User.email == email).one_or_none()
 
-    if not user or not verify_password(password, user.hashed_password):
+    if user is None or not verify_password(password, user.hashed_password):
         logging.warning(f"Failed to find user with email {email}")
-        return False
-    
-    return True
+        return None
+
+    return user
 
 def create_access_token(email: str, user_id: UUID, expire_delta: timedelta) -> str:
     encode = {
@@ -69,3 +69,11 @@ def get_current_user(token: Annotated[str, Depends(oauth_bearer)]) -> TokenData:
     return verify_token(token)
 
 CurrentUser = Annotated[TokenData, Depends(get_current_user)]
+
+def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends(CurrentUser)], db: Session) -> Token:
+    user = authenticate_user(form_data.username, form_data.password, db)
+    if not user:
+        raise AuthenticationError()
+    
+    token = create_access_token(user.email, user.id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    return Token(access_token=token, token_type="bearer")
