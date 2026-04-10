@@ -32,7 +32,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 )
 
 bcrypt_context = CryptContext(schemes=['bcrypt'])
-oauth_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
+oauth_bearer = OAuth2PasswordBearer(tokenUrl='auth/login')
 
 def register_user(request: RegisterUserRequest, db: Session) -> None:
     try:
