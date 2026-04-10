@@ -15,5 +15,13 @@ wheels/
 # Vscode
 .vscode/
 
-# environments
+# Environments
 .env
+
+# Tests
+.pytest_cache
+test.db
+
+# MyPy
+.mypy_cache
+

@@ -75,7 +75,7 @@ def authenticate_user(email: str, password: str, db: Session) -> User | None:
 def create_access_token(email: str, user_id: UUID, expire_delta: timedelta) -> str:
     encode = {
         "sub": email,
-        "id": user_id,
+        "id": str(user_id),
         "exp": datetime.now(timezone.utc) + expire_delta
     }
     

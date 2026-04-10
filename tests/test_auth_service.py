@@ -51,10 +51,7 @@ def test_authenticate_user_success(db_session):
 
     assert authenticate_user("dan@test.com", "hashed", db_session) == user
 
-def test_verify_token():
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QG1haWwuY29tIiwiaWQiOiJhNGM4YTcyZS0zZjFkLTRiNmEtYjhjNS02YzBiOGYyZDdlOWEiLCJleHAiOjE3NzUzMzgwNTV9.cqg67JEakWaiZq8pCOw3PJ76zTlacznVHcgnHAZvWic"
+def test_verify_token(test_token, test_user_id):
+    data = TokenData(user_id=test_user_id)
     
-    data = TokenData(user_id="a4c8a72e-3f1d-4b6a-b8c5-6c0b8f2d7e9a")
-    
-    assert verify_token(token) == data
-
+    assert verify_token(test_token) == data
