@@ -9,7 +9,7 @@ from src.errors.custom import AuthenticationError
 from ...rate_limiting import limiter
 from ...db.core import DbSession
 from ..model.requests import RegisterUserRequest
-from ..service.auth_service import CurrentUser, register_user, login_for_access_token
+from ..service.auth_service import register_user, login_for_access_token
 
 auth_router = APIRouter(prefix="/auth")
 
