@@ -32,7 +32,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 )
 
 bcrypt_context = CryptContext(schemes=['bcrypt'])
-oauth_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
+oauth_bearer = OAuth2PasswordBearer(tokenUrl='auth/login')
 
 def register_user(request: RegisterUserRequest, db: Session) -> None:
     try:
@@ -75,7 +75,7 @@ def authenticate_user(email: str, password: str, db: Session) -> User | None:
 def create_access_token(email: str, user_id: UUID, expire_delta: timedelta) -> str:
     encode = {
         "sub": email,
-        "id": user_id,
+        "id": str(user_id),
         "exp": datetime.now(timezone.utc) + expire_delta
     }
     
