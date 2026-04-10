@@ -7,6 +7,7 @@ from src.auth.service.auth_service import get_hashed_password
 from src.entities.user import User
 from src.errors.custom import InvalidPasswordConfirmError
 
+
 def test_change_password(db_session, test_user_data):
     user = User(
         first_name=test_user_data.first_name,
@@ -24,7 +25,9 @@ def test_change_password(db_session, test_user_data):
         new_password_confirm=new_password,
     )
 
-    assert change_password(change_password_request) == ChangePasswordResponse(message="success")
+    assert change_password(change_password_request) == ChangePasswordResponse(
+        message="success"
+    )
     assert user.hashed_password == get_hashed_password(new_password)
 
 
@@ -48,6 +51,6 @@ def test_change_password_fails_wrong_confirm(db_session, test_user_data):
     )
     with pytest.raises(InvalidPasswordConfirmError) as excinfo:
         change_password(change_password_request)
-    
+
     assert str(excinfo.value) == "Confirm password doesn't match new password"
     assert user.hashed_password == get_hashed_password(test_user_data.password)
