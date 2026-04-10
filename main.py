@@ -18,6 +18,7 @@ app.add_middleware(SlowAPIMiddleware)
 
 app.include_router(auth_router)
 
+
 @app.get("/")
 async def root():
     return {"message": "hello world"}

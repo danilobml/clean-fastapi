@@ -8,20 +8,27 @@ from src.auth.service.auth_service import (
     get_hashed_password,
     get_user,
     register_user,
-    verify_token
+    verify_token,
 )
 
+
 def test_register_user(db_session):
-    request = RegisterUserRequest(email="test@mail.com", password="test-pass", first_name="Tester", last_name="Testman")
+    request = RegisterUserRequest(
+        email="test@mail.com",
+        password="test-pass",
+        first_name="Tester",
+        last_name="Testman",
+    )
 
     try:
-        register_user(request, db_session) 
+        register_user(request, db_session)
     except Exception as e:
         pytest.fail(f"register_user test failed: {e}")
-    
+
     user = db_session.query(User).filter(User.email == request.email).one()
-    
+
     assert user.first_name == request.first_name
+
 
 def test_get_user(db_session):
     user = User(
@@ -32,9 +39,9 @@ def test_get_user(db_session):
     )
     db_session.add(user)
     db_session.commit()
-    
+
     found_user = get_user(user.id, db_session)
-    
+
     assert found_user.email == user.email
 
 
@@ -51,7 +58,8 @@ def test_authenticate_user_success(db_session):
 
     assert authenticate_user("dan@test.com", "hashed", db_session) == user
 
+
 def test_verify_token(test_token, test_user_id):
     data = TokenData(user_id=test_user_id)
-    
+
     assert verify_token(test_token) == data

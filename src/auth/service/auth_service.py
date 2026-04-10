@@ -27,12 +27,11 @@ if not SECRET_KEY:
 
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
-ACCESS_TOKEN_EXPIRE_MINUTES = int(
-    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
-)
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
-bcrypt_context = CryptContext(schemes=['bcrypt'])
-oauth_bearer = OAuth2PasswordBearer(tokenUrl='auth/login')
+bcrypt_context = CryptContext(schemes=["bcrypt"])
+oauth_bearer = OAuth2PasswordBearer(tokenUrl="auth/login")
+
 
 def register_user(request: RegisterUserRequest, db: Session) -> None:
     try:
@@ -48,6 +47,7 @@ def register_user(request: RegisterUserRequest, db: Session) -> None:
         logging.warning(f"Failed to register user with email {request.email}: {e}")
         raise
 
+
 def get_user(id: UUID, db: Session) -> User:
     try:
         user = db.query(User).filter(User.id == id).one()
@@ -56,12 +56,14 @@ def get_user(id: UUID, db: Session) -> User:
         logging.warning(f"No user found with id {id}: {e}")
         raise
 
+
 def get_hashed_password(password: str) -> str:
     return bcrypt_context.hash(password)
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
     return bcrypt_context.verify(password, hashed_password)
+
 
 def authenticate_user(email: str, password: str, db: Session) -> User | None:
     user = db.query(User).filter(User.email == email).one_or_none()
@@ -72,14 +74,16 @@ def authenticate_user(email: str, password: str, db: Session) -> User | None:
 
     return user
 
+
 def create_access_token(email: str, user_id: UUID, expire_delta: timedelta) -> str:
     encode = {
         "sub": email,
         "id": str(user_id),
-        "exp": datetime.now(timezone.utc) + expire_delta
+        "exp": datetime.now(timezone.utc) + expire_delta,
     }
-    
+
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
 
 def verify_token(token: str) -> TokenData:
     try:
@@ -90,15 +94,22 @@ def verify_token(token: str) -> TokenData:
         logging.warning(f"Failed to authenticate JWT: {e}")
         raise AuthenticationError()
 
+
 def get_current_user(token: Annotated[str, Depends(oauth_bearer)]) -> TokenData:
     return verify_token(token)
 
+
 CurrentUser = Annotated[TokenData, Depends(get_current_user)]
 
-def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends(CurrentUser)], db: Session) -> Token:
+
+def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends(CurrentUser)], db: Session
+) -> Token:
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise AuthenticationError()
-    
-    token = create_access_token(user.email, user.id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+
+    token = create_access_token(
+        user.email, user.id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
     return Token(access_token=token, token_type="bearer")
