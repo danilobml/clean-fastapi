@@ -11,11 +11,11 @@ repos:
         name: mypy
         entry: mypy .
         language: system
-        types: [python3]
+        types: [python]
         pass_filenames: false
       - id: pytest
         name: pytest
         entry: pytest
         language: system
-        types: [python3]
+        types: [python]
         pass_filenames: false

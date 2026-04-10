@@ -18,7 +18,6 @@ def test_change_password(db_session, test_user_data):
     db_session.commit()
 
     new_password = "updated-pass"
-
     change_password_request = ChangePasswordRequest(
         current_password=test_user_data.password,
         new_password=new_password,
