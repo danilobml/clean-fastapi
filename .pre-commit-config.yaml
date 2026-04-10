@@ -8,12 +8,14 @@ repos:
   - repo: local
     hooks:
       - id: mypy
-        name: mypy .
+        name: mypy
+        entry: mypy .
         language: system
         types: [python3]
         pass_filenames: false
       - id: pytest
         name: pytest
+        entry: pytest
         language: system
         types: [python3]
         pass_filenames: false

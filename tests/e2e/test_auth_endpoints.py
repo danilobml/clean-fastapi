@@ -1,5 +1,6 @@
 from starlette import status
 
+
 def test_register_and_login(client, test_user_data):
     register_response = client.post(
         "/auth/register",
@@ -10,7 +11,9 @@ def test_register_and_login(client, test_user_data):
             "last_name": test_user_data.last_name,
         },
     )
-    assert register_response.status_code == status.HTTP_201_CREATED, register_response.text
+    assert (
+        register_response.status_code == status.HTTP_201_CREATED
+    ), register_response.text
 
     response = client.post(
         "/auth/login",
