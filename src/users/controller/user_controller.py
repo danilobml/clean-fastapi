@@ -15,9 +15,9 @@ user_router = APIRouter(prefix="/users")
 
 @user_router.get("/{id}", status_code=status.HTTP_200_OK, response_model=UserResponse)
 @limiter.limit("5/hour")
-async def get_user(request: Request, id: str, db: DbSession) -> UserResponse:
+async def get_user(request: Request, id: UUID, db: DbSession) -> UserResponse:
     try:
-        user = user_service.get_user(UUID(id), db)
+        user = user_service.get_user(id, db)
         return UserResponse(
             id=str(user.id),
             email=user.email,
