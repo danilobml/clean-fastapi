@@ -1,36 +1,25 @@
-import os
 import logging
-from uuid import UUID
-from datetime import datetime, timezone, timedelta
-from typing import Annotated
 
-import jwt
-from jwt.exceptions import PyJWTError
-from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+import os
+from datetime import timedelta
+from typing import Annotated
 from dotenv import load_dotenv
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import Depends
-from sqlalchemy.exc import NoResultFound
 
 from src.auth.model.requests import RegisterUserRequest
+from src.security.jwt import CurrentUser, create_access_token
+from src.security.password import get_hashed_password, verify_password
 
 from ...db.core import Session
 from ...entities.user import User
-from ..model.token import TokenData, Token
+from ..model.token import Token
 from ...errors.custom import AuthenticationError
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY environment variable is required")
-
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
-
-bcrypt_context = CryptContext(schemes=["bcrypt"])
-oauth_bearer = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 def register_user(request: RegisterUserRequest, db: Session) -> None:
@@ -48,23 +37,6 @@ def register_user(request: RegisterUserRequest, db: Session) -> None:
         raise
 
 
-def get_user(id: UUID, db: Session) -> User:
-    try:
-        user = db.query(User).filter(User.id == id).one()
-        return user
-    except NoResultFound as e:
-        logging.warning(f"No user found with id {id}: {e}")
-        raise
-
-
-def get_hashed_password(password: str) -> str:
-    return bcrypt_context.hash(password)
-
-
-def verify_password(password: str, hashed_password: str) -> bool:
-    return bcrypt_context.verify(password, hashed_password)
-
-
 def authenticate_user(email: str, password: str, db: Session) -> User | None:
     user = db.query(User).filter(User.email == email).one_or_none()
 
@@ -73,33 +45,6 @@ def authenticate_user(email: str, password: str, db: Session) -> User | None:
         return None
 
     return user
-
-
-def create_access_token(email: str, user_id: UUID, expire_delta: timedelta) -> str:
-    encode = {
-        "sub": email,
-        "id": str(user_id),
-        "exp": datetime.now(timezone.utc) + expire_delta,
-    }
-
-    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
-
-
-def verify_token(token: str) -> TokenData:
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        id: str = str(payload.get("id"))
-        return TokenData(user_id=id)
-    except PyJWTError as e:
-        logging.warning(f"Failed to authenticate JWT: {e}")
-        raise AuthenticationError()
-
-
-def get_current_user(token: Annotated[str, Depends(oauth_bearer)]) -> TokenData:
-    return verify_token(token)
-
-
-CurrentUser = Annotated[TokenData, Depends(get_current_user)]
 
 
 def login_for_access_token(

@@ -3,13 +3,9 @@ import pytest
 from src.auth.model.requests import RegisterUserRequest
 from src.entities.user import User
 from src.auth.model.token import TokenData
-from src.auth.service.auth_service import (
-    authenticate_user,
-    get_hashed_password,
-    get_user,
-    register_user,
-    verify_token,
-)
+from src.security.jwt import verify_token
+from src.security.password import get_hashed_password
+from src.auth.service.auth_service import authenticate_user, register_user
 
 
 def test_register_user(db_session):
@@ -28,21 +24,6 @@ def test_register_user(db_session):
     user = db_session.query(User).filter(User.email == request.email).one()
 
     assert user.first_name == request.first_name
-
-
-def test_get_user(db_session):
-    user = User(
-        first_name="Dan",
-        last_name="Bar",
-        email="dan@test.com",
-        hashed_password=get_hashed_password("hashed"),
-    )
-    db_session.add(user)
-    db_session.commit()
-
-    found_user = get_user(user.id, db_session)
-
-    assert found_user.email == user.email
 
 
 def test_authenticate_user_success(db_session):
