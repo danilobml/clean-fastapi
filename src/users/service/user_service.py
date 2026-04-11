@@ -5,11 +5,11 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
 from src.entities.user import User
-from src.security.password import get_hashed_password
+from src.security.password import get_hashed_password, verify_password
 
 from ..model.requests import ChangePasswordRequest, UpdateUserRequest
 from ..model.responses import ChangePasswordResponse, DeleteUserResponse, UserResponse
-from src.errors.custom import InvalidPasswordConfirmError
+from src.errors.custom import InvalidPasswordConfirmError, AuthenticationError
 
 
 def get_user(id: UUID, db: Session) -> User:
@@ -68,6 +68,9 @@ def change_password(
     except NoResultFound as e:
         logging.warning(f"No user found with id {user_id}: {e}")
         raise
+
+    if not verify_password(request.current_password, user.hashed_password):
+        raise AuthenticationError()
 
     user.hashed_password = get_hashed_password(request.new_password)
 

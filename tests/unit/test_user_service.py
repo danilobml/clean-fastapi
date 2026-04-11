@@ -11,7 +11,7 @@ from src.users.model.responses import (
     UserResponse,
 )
 from src.entities.user import User
-from src.errors.custom import InvalidPasswordConfirmError
+from src.errors.custom import AuthenticationError, InvalidPasswordConfirmError
 from src.users.service.user_service import (
     change_password,
     delete_user,
@@ -210,3 +210,25 @@ def test_change_password_fails_wrong_confirm(db_session, test_user_data):
         change_password(change_password_request, user.id, db_session)
 
     assert str(excinfo.value) == "Confirm password doesn't match new password"
+
+
+def test_change_password_wrong_current_password_fails(db_session, test_user_data):
+    user = User(
+        first_name=test_user_data.first_name,
+        last_name=test_user_data.last_name,
+        email=test_user_data.email,
+        hashed_password=get_hashed_password(test_user_data.password),
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    new_password = "updated-pass"
+    wrong_currrent_password = "wrong_pass"
+
+    change_password_request = ChangePasswordRequest(
+        current_password=wrong_currrent_password,
+        new_password=new_password,
+        new_password_confirm=new_password,
+    )
+    with pytest.raises(AuthenticationError):
+        change_password(change_password_request, user.id, db_session)
