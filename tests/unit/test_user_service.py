@@ -173,7 +173,7 @@ def test_change_password(db_session, test_user_data, test_user_id):
     db_session.add(user)
     db_session.commit()
 
-    new_user = db_session.get(User, {"id": UUID(test_user_id)})
+    new_user = db_session.get(User, UUID(test_user_id))
 
     new_password = "updated-pass"
 
