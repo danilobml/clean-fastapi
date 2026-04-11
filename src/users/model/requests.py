@@ -5,3 +5,8 @@ class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
     new_password_confirm: str
+
+
+class UpdateUserRequest(BaseModel):
+    first_name: str
+    last_name: str
