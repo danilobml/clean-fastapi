@@ -58,7 +58,7 @@ def update_user_name(request: UpdateUserRequest, id: UUID, db: Session) -> UserR
 
 
 def change_password(
-    request: ChangePasswordRequest, user_id: str, db: Session
+    request: ChangePasswordRequest, user_id: UUID, db: Session
 ) -> ChangePasswordResponse:
     if request.new_password != request.new_password_confirm:
         raise InvalidPasswordConfirmError()
