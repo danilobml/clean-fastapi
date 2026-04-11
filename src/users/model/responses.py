@@ -10,7 +10,3 @@ class UserResponse(BaseModel):
 
 class ChangePasswordResponse(BaseModel):
     message: str
-
-
-class DeleteUserResponse(BaseModel):
-    message: str

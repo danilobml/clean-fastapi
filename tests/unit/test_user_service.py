@@ -7,7 +7,6 @@ from src.security.password import get_hashed_password, verify_password
 from src.users.model.requests import ChangePasswordRequest, UpdateUserRequest
 from src.users.model.responses import (
     ChangePasswordResponse,
-    DeleteUserResponse,
     UserResponse,
 )
 from src.entities.user import User
@@ -85,9 +84,7 @@ def test_delete_user(db_session):
     db_session.add(user)
     db_session.commit()
 
-    assert delete_user(user.id, db_session) == DeleteUserResponse(
-        message="User successfully deleted"
-    )
+    delete_user(user.id, db_session)
 
     with pytest.raises(NoResultFound):
         get_user(user.id, db_session)

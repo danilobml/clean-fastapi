@@ -50,3 +50,14 @@ async def get_all_users(request: Request, db: DbSession) -> list[UserResponse]:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}"
         )
+
+
+@user_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/hour")
+async def delete_user(request: Request, id: UUID, db: DbSession) -> None:
+    try:
+        user_service.delete_user(id, db)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )

@@ -8,7 +8,7 @@ from src.entities.user import User
 from src.security.password import get_hashed_password, verify_password
 
 from ..model.requests import ChangePasswordRequest, UpdateUserRequest
-from ..model.responses import ChangePasswordResponse, DeleteUserResponse, UserResponse
+from ..model.responses import ChangePasswordResponse, UserResponse
 from src.errors.custom import InvalidPasswordConfirmError, AuthenticationError
 
 
@@ -25,14 +25,12 @@ def get_all_users(db: Session) -> list[User]:
     return db.query(User).all()
 
 
-def delete_user(id: UUID, db: Session) -> DeleteUserResponse:
+def delete_user(id: UUID, db: Session) -> None:
     deleted = db.query(User).filter(User.id == id).delete()
     db.commit()
 
     if deleted == 0:
         raise NoResultFound()
-
-    return DeleteUserResponse(message="User successfully deleted")
 
 
 def update_user_name(request: UpdateUserRequest, id: UUID, db: Session) -> UserResponse:
