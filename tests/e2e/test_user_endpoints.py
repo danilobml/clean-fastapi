@@ -74,5 +74,6 @@ def test_get_all_users(
     body = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    assert user_1.email == body[0].get("email")
-    assert user_2.email == body[1].get("email")
+    returned_emails = sorted(user.get("email") for user in body)
+    expected_emails = sorted([user_1.email, user_2.email])
+    assert returned_emails == expected_emails
