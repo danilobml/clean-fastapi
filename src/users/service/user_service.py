@@ -66,7 +66,7 @@ def change_password(
     try:
         user = db.query(User).filter(User.id == user_id).one()
     except NoResultFound as e:
-        logging.warning(f"No user found with id {id}: {e}")
+        logging.warning(f"No user found with id {user_id}: {e}")
         raise
 
     user.hashed_password = get_hashed_password(request.new_password)
