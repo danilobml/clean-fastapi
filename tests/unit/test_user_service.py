@@ -3,14 +3,13 @@ from uuid import UUID
 import pytest
 from sqlalchemy.exc import NoResultFound
 
-from src.security.password import verify_password
+from src.security.password import get_hashed_password, verify_password
 from src.users.model.requests import ChangePasswordRequest, UpdateUserRequest
 from src.users.model.responses import (
     ChangePasswordResponse,
     DeleteUserResponse,
     UserResponse,
 )
-from src.auth.service.auth_service import get_hashed_password
 from src.entities.user import User
 from src.errors.custom import InvalidPasswordConfirmError
 from src.users.service.user_service import (
