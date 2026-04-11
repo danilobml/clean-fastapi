@@ -21,6 +21,12 @@ TEST_FIRST_NAME = "Tester"
 TEST_LAST_NAME = "Testermann"
 TEST_PASSWORD = "test-pass"
 
+TEST_EMAIL_2 = "test2@mail.com"
+TEST_USER_ID_2 = "f2d7f3d2-6f5a-4a9c-bb6c-2a3f6e0f51e1"
+TEST_FIRST_NAME_2 = "Jeb"
+TEST_LAST_NAME_2 = "Jebbers"
+TEST_PASSWORD_2 = "jeb-pass"
+
 
 @dataclass(frozen=True)
 class TestUserData:
@@ -89,3 +95,18 @@ def test_user_data() -> TestUserData:
 @pytest.fixture(scope="function")
 def test_user_id() -> str:
     return TEST_USER_ID
+
+
+@pytest.fixture(scope="function")
+def test_user_2_data() -> TestUserData:
+    return TestUserData(
+        TEST_EMAIL_2,
+        TEST_FIRST_NAME_2,
+        TEST_LAST_NAME_2,
+        TEST_PASSWORD_2,
+    )
+
+
+@pytest.fixture(scope="function")
+def test_user_2_id() -> str:
+    return TEST_USER_ID_2
