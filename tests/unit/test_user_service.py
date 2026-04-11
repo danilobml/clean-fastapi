@@ -16,6 +16,7 @@ from src.users.service.user_service import (
     change_password,
     delete_user,
     get_user,
+    get_all_users,
     update_user_name,
 )
 
@@ -33,6 +34,29 @@ def test_get_user(db_session):
     found_user = get_user(user.id, db_session)
 
     assert found_user.email == user.email
+
+
+def test_get_all_users(db_session):
+    user_1 = User(
+        first_name="Dan",
+        last_name="Bar",
+        email="dan@test.com",
+        hashed_password=get_hashed_password("hashed"),
+    )
+    user_2 = User(
+        first_name="Jeb",
+        last_name="Jebber",
+        email="jeb@mail.com",
+        hashed_password=get_hashed_password("hashed"),
+    )
+    db_session.add(user_1)
+    db_session.add(user_2)
+    db_session.commit()
+
+    users = get_all_users(db_session)
+
+    assert user_1 in users
+    assert user_2 in users
 
 
 def test_get_nonexisting_user_fails(db_session):
@@ -104,7 +128,10 @@ def test_update_user_name(db_session, test_user_data, test_user_id):
         UUID(test_user_id),
         db_session,
     ) == UserResponse(
-        email=user.email, first_name=new_user_first_name, last_name=new_user_last_name
+        id=str(user.id),
+        email=user.email,
+        first_name=new_user_first_name,
+        last_name=new_user_last_name,
     )
 
 

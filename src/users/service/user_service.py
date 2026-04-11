@@ -21,6 +21,10 @@ def get_user(id: UUID, db: Session) -> User:
         raise
 
 
+def get_all_users(db: Session) -> list[User]:
+    return db.query(User).all()
+
+
 def delete_user(id: UUID, db: Session) -> DeleteUserResponse:
     deleted = db.query(User).filter(User.id == id).delete()
     db.commit()
@@ -49,7 +53,10 @@ def update_user_name(request: UpdateUserRequest, id: UUID, db: Session) -> UserR
         db.commit()
 
         return UserResponse(
-            email=user.email, first_name=user.first_name, last_name=user.last_name
+            id=str(user.id),
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
         )
 
     except NoResultFound as e:

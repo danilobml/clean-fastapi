@@ -8,6 +8,7 @@ from slowapi.util import get_remote_address
 from src.rate_limiting import rate_limit_handler
 
 from src.auth.controller.auth_controller import auth_router
+from src.users.controller.user_controller import user_router
 
 load_dotenv()
 
@@ -19,8 +20,9 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 app.include_router(auth_router)
+app.include_router(user_router)
 
 
 @app.get("/")
 async def root():
-    return {"message": "hello world"}
+    return {"message": "Clean Jobs API!"}
