@@ -63,7 +63,7 @@ def test_get_all_users(
         first_name=test_user_2_data.first_name,
         last_name=test_user_2_data.last_name,
         email=test_user_2_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
+        hashed_password=get_hashed_password(test_user_2_data.password),
     )
     db_session.add(user_1)
     db_session.add(user_2)
