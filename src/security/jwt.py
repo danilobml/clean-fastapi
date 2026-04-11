@@ -37,8 +37,16 @@ def create_access_token(email: str, user_id: UUID, expire_delta: timedelta) -> s
 def verify_token(token: str) -> TokenData:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        id: str = str(payload.get("id"))
-        return TokenData(user_id=id)
+        raw_id = payload.get("id")
+        if not isinstance(raw_id, str):
+            raise AuthenticationError()
+
+        try:
+            user_id = str(UUID(raw_id))
+        except (ValueError, TypeError):
+            raise AuthenticationError()
+
+        return TokenData(user_id=user_id)
     except jwt.PyJWTError as e:
         logging.warning(f"Failed to authenticate JWT: {e}")
         raise AuthenticationError()
