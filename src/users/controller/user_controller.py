@@ -105,12 +105,12 @@ async def change_password(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    except InvalidPasswordConfirmError:
+    except InvalidPasswordConfirmError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password and confirm password don't match",
+            detail=str(e),
         )
-    except AuthenticationError:
+    except AuthenticationError as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong credentials"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)
         )
