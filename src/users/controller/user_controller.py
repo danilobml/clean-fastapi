@@ -69,23 +69,18 @@ async def delete_user(request: Request, id: UUID, db: DbSession) -> None:
 async def update_user_name(
     request: Request, update_user_request: UpdateUserRequest, id: UUID, db: DbSession
 ) -> UserResponse:
-    update_req = update_user_request.model_dump()
-    new_first_name = update_req.get("first_name")
-    new_last_name = update_req.get("last_name")
-
-    if not new_first_name or not new_last_name:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Required parameter missing (first or last_name)",
-        )
-
     try:
         return user_service.update_user_name(
-            UpdateUserRequest(first_name=new_first_name, last_name=new_last_name),
+            update_user_request,
             id,
             db,
         )
     except NoResultFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing required parameter (first or last_name)",
         )
