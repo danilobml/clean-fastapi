@@ -30,6 +30,7 @@ def delete_user(id: UUID, db: Session) -> None:
     db.commit()
 
     if deleted == 0:
+        logging.warning(f"Delete: Failed to find user with id {id}")
         raise NoResultFound()
 
 
@@ -40,6 +41,7 @@ def update_user_name(request: UpdateUserRequest, id: UUID, db: Session) -> UserR
         or not request.last_name
         or request.last_name == ""
     ):
+        logging.warning("Update user name: missing parameter")
         raise ValueError("Missing required parameter")
 
     try:
