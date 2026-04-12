@@ -6,6 +6,7 @@ from sqlalchemy.exc import NoResultFound
 from starlette import status
 
 from src.db.core import DbSession
+from src.users.model.requests import UpdateUserRequest
 from src.users.model.responses import UserResponse
 from src.rate_limiting import limiter
 from src.users.service import user_service
@@ -57,6 +58,33 @@ async def get_all_users(request: Request, db: DbSession) -> list[UserResponse]:
 async def delete_user(request: Request, id: UUID, db: DbSession) -> None:
     try:
         user_service.delete_user(id, db)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+
+@user_router.put("/{id}", status_code=status.HTTP_200_OK, response_model=UserResponse)
+@limiter.limit("5/hour")
+async def update_user_name(
+    request: Request, update_user_request: UpdateUserRequest, id: UUID, db: DbSession
+) -> UserResponse:
+    update_req = update_user_request.model_dump()
+    new_first_name = update_req.get("first_name")
+    new_last_name = update_req.get("last_name")
+
+    if not new_first_name or not new_last_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Required parameter missing (first or last_name)",
+        )
+
+    try:
+        return user_service.update_user_name(
+            UpdateUserRequest(first_name=new_first_name, last_name=new_last_name),
+            id,
+            db,
+        )
     except NoResultFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"

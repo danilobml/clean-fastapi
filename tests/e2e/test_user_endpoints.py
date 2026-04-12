@@ -93,3 +93,104 @@ def test_delete_user_endpoint(client, test_user_data, test_user_id, db_session):
 
     assert del_resp.status_code == status.HTTP_204_NO_CONTENT
     assert get_resp.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_delete_nonexisting_user_fails(
+    client, test_user_data, test_user_id, db_session
+):
+    user = User(
+        id=UUID(test_user_id),
+        first_name=test_user_data.first_name,
+        last_name=test_user_data.last_name,
+        email=test_user_data.email,
+        hashed_password=get_hashed_password(test_user_data.password),
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    nonexisting_user_id = "b7f6c2a4-3c8f-4c1f-9d7a-2e6b5a9f8d13"
+
+    response = client.delete(f"/users/{nonexisting_user_id}")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_update_user_name_endpoint(client, test_user_data, test_user_id, db_session):
+    user = User(
+        id=UUID(test_user_id),
+        first_name=test_user_data.first_name,
+        last_name=test_user_data.last_name,
+        email=test_user_data.email,
+        hashed_password=get_hashed_password(test_user_data.password),
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    new_first_name = "Updated"
+    new_last_name = "Name"
+
+    response = client.put(
+        f"/users/{test_user_id}",
+        json={"first_name": new_first_name, "last_name": new_last_name},
+    )
+
+    updated_user = db_session.get(User, UUID(test_user_id))
+
+    body = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert body["first_name"] == new_first_name
+    assert body["last_name"] == new_last_name
+
+    assert updated_user.first_name == new_first_name
+    assert updated_user.last_name == new_last_name
+
+
+def test_update_nonexisting_user_name_fails(
+    client, test_user_data, test_user_id, db_session
+):
+    user = User(
+        id=UUID(test_user_id),
+        first_name=test_user_data.first_name,
+        last_name=test_user_data.last_name,
+        email=test_user_data.email,
+        hashed_password=get_hashed_password(test_user_data.password),
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    new_first_name = "Updated"
+    new_last_name = "Name"
+
+    nonexisting_user_id = "b7f6c2a4-3c8f-4c1f-9d7a-2e6b5a9f8d13"
+
+    response = client.put(
+        f"/users/{nonexisting_user_id}",
+        json={"first_name": new_first_name, "last_name": new_last_name},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_update_user_name_missing_param_fails(
+    client, test_user_data, test_user_id, db_session
+):
+    user = User(
+        id=UUID(test_user_id),
+        first_name=test_user_data.first_name,
+        last_name=test_user_data.last_name,
+        email=test_user_data.email,
+        hashed_password=get_hashed_password(test_user_data.password),
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    new_first_name = "Updated"
+    new_last_name = ""
+
+    response = client.put(
+        f"/users/{test_user_id}",
+        json={"first_name": new_first_name, "last_name": new_last_name},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
