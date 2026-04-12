@@ -3,11 +3,13 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from src.entities.job import Priority
+
 
 class JobResponse(BaseModel):
     id: UUID
     user_id: UUID
     description: str
     due_date: datetime
-    priority: str
+    priority: Priority
     is_completed: bool

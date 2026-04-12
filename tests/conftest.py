@@ -171,7 +171,7 @@ def test_job(db_session):
 
 
 @pytest.fixture(scope="function")
-def three_test_jobs(db_session):
+def three_test_jobs(db_session, _two_users):
     job_1 = Job(
         id=UUID("9f3c2d6e-6f0b-4b2a-8e1d-1c7d5a9e2f44"),
         user_id=UUID(TEST_USER_ID),
