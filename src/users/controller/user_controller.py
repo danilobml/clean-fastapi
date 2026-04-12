@@ -6,8 +6,9 @@ from sqlalchemy.exc import NoResultFound
 from starlette import status
 
 from src.db.core import DbSession
-from src.users.model.requests import UpdateUserRequest
-from src.users.model.responses import UserResponse
+from src.errors.custom import AuthenticationError, InvalidPasswordConfirmError
+from src.users.model.requests import UpdateUserRequest, ChangePasswordRequest
+from src.users.model.responses import UserResponse, ChangePasswordResponse
 from src.rate_limiting import limiter
 from src.users.service import user_service
 
@@ -64,7 +65,7 @@ async def delete_user(request: Request, id: UUID, db: DbSession) -> None:
         )
 
 
-@user_router.put("/{id}", status_code=status.HTTP_200_OK, response_model=UserResponse)
+@user_router.patch("/{id}", status_code=status.HTTP_200_OK, response_model=UserResponse)
 @limiter.limit("5/hour")
 async def update_user_name(
     request: Request, update_user_request: UpdateUserRequest, id: UUID, db: DbSession
@@ -83,4 +84,33 @@ async def update_user_name(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Missing required parameter (first or last_name)",
+        )
+
+
+@user_router.patch(
+    "/{id}/change-password",
+    status_code=status.HTTP_200_OK,
+    response_model=ChangePasswordResponse,
+)
+@limiter.limit("5/hour")
+async def change_password(
+    request: Request,
+    change_password_request: ChangePasswordRequest,
+    id: UUID,
+    db: DbSession,
+) -> ChangePasswordResponse:
+    try:
+        return user_service.change_password(change_password_request, id, db)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    except InvalidPasswordConfirmError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password and confirm password don't match",
+        )
+    except AuthenticationError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong credentials"
         )

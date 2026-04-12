@@ -3,6 +3,7 @@ from uuid import UUID
 from starlette import status
 
 from src.entities.user import User
+from src.security.password import verify_password
 from src.users.model.responses import UserResponse
 
 
@@ -60,7 +61,7 @@ def test_update_user_name_endpoint(client, _test_user, test_user_id, db_session)
     new_first_name = "Updated"
     new_last_name = "Name"
 
-    response = client.put(
+    response = client.patch(
         f"/users/{test_user_id}",
         json={"first_name": new_first_name, "last_name": new_last_name},
     )
@@ -83,7 +84,7 @@ def test_update_nonexisting_user_name_fails(client, _test_user):
 
     nonexisting_user_id = "b7f6c2a4-3c8f-4c1f-9d7a-2e6b5a9f8d13"
 
-    response = client.put(
+    response = client.patch(
         f"/users/{nonexisting_user_id}",
         json={"first_name": new_first_name, "last_name": new_last_name},
     )
@@ -95,9 +96,83 @@ def test_update_user_name_missing_param_fails(client, _test_user, test_user_id):
     new_first_name = "Updated"
     new_last_name = ""
 
-    response = client.put(
+    response = client.patch(
         f"/users/{test_user_id}",
         json={"first_name": new_first_name, "last_name": new_last_name},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_change_password_endpoint(
+    client, _test_user, test_user_data, test_user_id, db_session
+):
+    new_password = "new-pass"
+
+    response = client.patch(
+        f"/users/{test_user_id}/change-password",
+        json={
+            "current_password": test_user_data.password,
+            "new_password": new_password,
+            "new_password_confirm": new_password,
+        },
+    )
+
+    body = response.json()
+
+    user = db_session.get(User, UUID(test_user_id))
+
+    assert response.status_code == status.HTTP_200_OK
+    assert body.get("message") == "Password successfully changed"
+
+    assert verify_password(new_password, user.hashed_password)
+
+
+def test_change_password_wrong_id_fails(client, _test_user, test_user_data):
+    new_password = "new-pass"
+    nonexisting_user_id = "b7f6c2a4-3c8f-4c1f-9d7a-2e6b5a9f8d13"
+
+    response = client.patch(
+        f"/users/{nonexisting_user_id}/change-password",
+        json={
+            "current_password": test_user_data.password,
+            "new_password": new_password,
+            "new_password_confirm": new_password,
+        },
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_change_password_wrong_password_fails(client, _test_user, test_user_id):
+    new_password = "new-pass"
+    wrong_password = "wrong-pass"
+
+    response = client.patch(
+        f"/users/{test_user_id}/change-password",
+        json={
+            "current_password": wrong_password,
+            "new_password": new_password,
+            "new_password_confirm": new_password,
+        },
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_change_password_wrong_password_confirm_fails(
+    client, _test_user, test_user_data, test_user_id
+):
+    new_password = "new-pass"
+    wrong_password_confirm = "wrong-pass"
+
+    response = client.patch(
+        f"/users/{test_user_id}/change-password",
+        json={
+            "current_password": test_user_data.password,
+            "new_password": new_password,
+            "new_password_confirm": wrong_password_confirm,
+        },
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
