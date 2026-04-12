@@ -9,6 +9,7 @@ from src.rate_limiting import rate_limit_handler
 
 from src.auth.controller.auth_controller import auth_router
 from src.users.controller.user_controller import user_router
+from src.jobs.controller.job_controller import job_router
 
 load_dotenv()
 
@@ -21,6 +22,7 @@ app.add_middleware(SlowAPIMiddleware)
 
 app.include_router(auth_router)
 app.include_router(user_router)
+app.include_router(job_router)
 
 
 @app.get("/")

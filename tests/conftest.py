@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from main import app
 from src.db.base import Base
 from src.db.core import get_db
+from src.entities.job import Job, Priority
 from src.entities.user import User
 from src.security.password import get_hashed_password
 
@@ -151,3 +152,52 @@ def _two_users(db_session, test_user_data, test_user_2_data):
     db_session.refresh(user_2)
 
     return user_1, user_2
+
+
+@pytest.fixture(scope="function")
+def test_job(db_session):
+    job = Job(
+        id=UUID("9f3c2d6e-6f0b-4b2a-8e1d-1c7d5a9e2f44"),
+        user_id=UUID(TEST_USER_ID),
+        description="Test job 1",
+        due_date=datetime.now() + timedelta(days=2),
+        priority=Priority.medium,
+    )
+
+    db_session.add(job)
+    db_session.commit()
+    db_session.refresh(job)
+    return job
+
+
+@pytest.fixture(scope="function")
+def three_test_jobs(db_session):
+    job_1 = Job(
+        id=UUID("9f3c2d6e-6f0b-4b2a-8e1d-1c7d5a9e2f44"),
+        user_id=UUID(TEST_USER_ID),
+        description="Test job 1",
+        due_date=datetime.now() + timedelta(days=2),
+        priority=Priority.medium,
+    )
+    job_2 = Job(
+        id=UUID("c1a7e5d3-9b62-4f8d-a3c9-6e0f1b2d7a88"),
+        user_id=UUID(TEST_USER_ID),
+        description="Test job 2",
+        due_date=datetime.now() + timedelta(days=1),
+        priority=Priority.high,
+    )
+    job_3 = Job(
+        id=UUID("4d8f0a2b-3c71-4e95-b6d2-9a1f7c5e8b33"),
+        user_id=UUID(TEST_USER_ID_2),
+        description="Test job 3",
+        due_date=datetime.now() + timedelta(days=5),
+        priority=Priority.low,
+    )
+
+    db_session.add_all([job_1, job_2, job_3])
+    db_session.commit()
+    db_session.refresh(job_1)
+    db_session.refresh(job_2)
+    db_session.refresh(job_3)
+
+    return job_1, job_2, job_3
