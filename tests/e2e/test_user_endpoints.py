@@ -3,21 +3,10 @@ from uuid import UUID
 from starlette import status
 
 from src.entities.user import User
-from src.security.password import get_hashed_password
 from src.users.model.responses import UserResponse
 
 
-def test_get_user_endpoint(client, test_user_data, test_user_id, db_session):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_get_user_endpoint(client, test_user, test_user_data, test_user_id):
     response = client.get(f"/users/{test_user_id}")
 
     assert response.status_code == status.HTTP_200_OK, response.text
@@ -32,17 +21,7 @@ def test_get_user_endpoint(client, test_user_data, test_user_id, db_session):
     assert "hashed_password" not in body
 
 
-def test_get_user_not_found(client, test_user_data, test_user_id, db_session):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_get_user_not_found(client, test_user):
     non_existing_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
     response = client.get(f"/users/{non_existing_id}")
@@ -50,44 +29,18 @@ def test_get_user_not_found(client, test_user_data, test_user_id, db_session):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_get_all_users_endpoint(client, test_user_data, test_user_2_data, db_session):
-    user_1 = User(
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    user_2 = User(
-        first_name=test_user_2_data.first_name,
-        last_name=test_user_2_data.last_name,
-        email=test_user_2_data.email,
-        hashed_password=get_hashed_password(test_user_2_data.password),
-    )
-    db_session.add(user_1)
-    db_session.add(user_2)
-    db_session.commit()
-
+def test_get_all_users_endpoint(client, two_users, test_user_data, test_user_2_data):
     response = client.get("/users")
 
     body = response.json()
 
     assert response.status_code == status.HTTP_200_OK
     returned_emails = sorted(user.get("email") for user in body)
-    expected_emails = sorted([user_1.email, user_2.email])
+    expected_emails = sorted([test_user_data.email, test_user_2_data.email])
     assert returned_emails == expected_emails
 
 
-def test_delete_user_endpoint(client, test_user_data, test_user_id, db_session):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_delete_user_endpoint(client, test_user, test_user_id):
     del_resp = client.delete(f"/users/{test_user_id}")
     get_resp = client.get(f"/users/{test_user_id}")
 
@@ -95,19 +48,7 @@ def test_delete_user_endpoint(client, test_user_data, test_user_id, db_session):
     assert get_resp.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_nonexisting_user_fails(
-    client, test_user_data, test_user_id, db_session
-):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_delete_nonexisting_user_fails(client, test_user):
     nonexisting_user_id = "b7f6c2a4-3c8f-4c1f-9d7a-2e6b5a9f8d13"
 
     response = client.delete(f"/users/{nonexisting_user_id}")
@@ -115,17 +56,7 @@ def test_delete_nonexisting_user_fails(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_user_name_endpoint(client, test_user_data, test_user_id, db_session):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_update_user_name_endpoint(client, test_user, test_user_id, db_session):
     new_first_name = "Updated"
     new_last_name = "Name"
 
@@ -146,19 +77,7 @@ def test_update_user_name_endpoint(client, test_user_data, test_user_id, db_sess
     assert updated_user.last_name == new_last_name
 
 
-def test_update_nonexisting_user_name_fails(
-    client, test_user_data, test_user_id, db_session
-):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_update_nonexisting_user_name_fails(client, test_user):
     new_first_name = "Updated"
     new_last_name = "Name"
 
@@ -172,19 +91,7 @@ def test_update_nonexisting_user_name_fails(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_user_name_missing_param_fails(
-    client, test_user_data, test_user_id, db_session
-):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_update_user_name_missing_param_fails(client, test_user, test_user_id):
     new_first_name = "Updated"
     new_last_name = ""
 

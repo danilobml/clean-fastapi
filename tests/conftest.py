@@ -1,4 +1,5 @@
 import os
+from uuid import UUID
 import jwt
 import pytest
 from dataclasses import dataclass
@@ -11,6 +12,8 @@ from sqlalchemy.orm import sessionmaker
 from main import app
 from src.db.base import Base
 from src.db.core import get_db
+from src.entities.user import User
+from src.security.password import get_hashed_password
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
@@ -110,3 +113,41 @@ def test_user_2_data() -> TestUserData:
 @pytest.fixture(scope="function")
 def test_user_2_id() -> str:
     return TEST_USER_ID_2
+
+
+@pytest.fixture
+def test_user(db_session, test_user_data, test_user_id):
+    user = User(
+        id=UUID(test_user_id),
+        first_name=test_user_data.first_name,
+        last_name=test_user_data.last_name,
+        email=test_user_data.email,
+        hashed_password=get_hashed_password(test_user_data.password),
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def two_users(db_session, test_user_data, test_user_2_data):
+    user_1 = User(
+        first_name=test_user_data.first_name,
+        last_name=test_user_data.last_name,
+        email=test_user_data.email,
+        hashed_password=get_hashed_password(test_user_data.password),
+    )
+    user_2 = User(
+        first_name=test_user_2_data.first_name,
+        last_name=test_user_2_data.last_name,
+        email=test_user_2_data.email,
+        hashed_password=get_hashed_password(test_user_2_data.password),
+    )
+
+    db_session.add_all([user_1, user_2])
+    db_session.commit()
+    db_session.refresh(user_1)
+    db_session.refresh(user_2)
+
+    return user_1, user_2
