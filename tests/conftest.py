@@ -115,8 +115,8 @@ def test_user_2_id() -> str:
     return TEST_USER_ID_2
 
 
-@pytest.fixture
-def test_user(db_session, test_user_data, test_user_id):
+@pytest.fixture(scope="function")
+def _test_user(db_session, test_user_data, test_user_id):
     user = User(
         id=UUID(test_user_id),
         first_name=test_user_data.first_name,
@@ -130,8 +130,8 @@ def test_user(db_session, test_user_data, test_user_id):
     return user
 
 
-@pytest.fixture
-def two_users(db_session, test_user_data, test_user_2_data):
+@pytest.fixture(scope="function")
+def _two_users(db_session, test_user_data, test_user_2_data):
     user_1 = User(
         first_name=test_user_data.first_name,
         last_name=test_user_data.last_name,

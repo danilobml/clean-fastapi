@@ -6,7 +6,7 @@ from src.entities.user import User
 from src.users.model.responses import UserResponse
 
 
-def test_get_user_endpoint(client, test_user, test_user_data, test_user_id):
+def test_get_user_endpoint(client, _test_user, test_user_data, test_user_id):
     response = client.get(f"/users/{test_user_id}")
 
     assert response.status_code == status.HTTP_200_OK, response.text
@@ -21,7 +21,7 @@ def test_get_user_endpoint(client, test_user, test_user_data, test_user_id):
     assert "hashed_password" not in body
 
 
-def test_get_user_not_found(client, test_user):
+def test_get_user_not_found(client, _test_user):
     non_existing_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
     response = client.get(f"/users/{non_existing_id}")
@@ -29,7 +29,7 @@ def test_get_user_not_found(client, test_user):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_get_all_users_endpoint(client, two_users, test_user_data, test_user_2_data):
+def test_get_all_users_endpoint(client, _two_users, test_user_data, test_user_2_data):
     response = client.get("/users")
 
     body = response.json()
@@ -40,7 +40,7 @@ def test_get_all_users_endpoint(client, two_users, test_user_data, test_user_2_d
     assert returned_emails == expected_emails
 
 
-def test_delete_user_endpoint(client, test_user, test_user_id):
+def test_delete_user_endpoint(client, _test_user, test_user_id):
     del_resp = client.delete(f"/users/{test_user_id}")
     get_resp = client.get(f"/users/{test_user_id}")
 
@@ -48,7 +48,7 @@ def test_delete_user_endpoint(client, test_user, test_user_id):
     assert get_resp.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_nonexisting_user_fails(client, test_user):
+def test_delete_nonexisting_user_fails(client, _test_user):
     nonexisting_user_id = "b7f6c2a4-3c8f-4c1f-9d7a-2e6b5a9f8d13"
 
     response = client.delete(f"/users/{nonexisting_user_id}")
@@ -56,7 +56,7 @@ def test_delete_nonexisting_user_fails(client, test_user):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_user_name_endpoint(client, test_user, test_user_id, db_session):
+def test_update_user_name_endpoint(client, _test_user, test_user_id, db_session):
     new_first_name = "Updated"
     new_last_name = "Name"
 
@@ -77,7 +77,7 @@ def test_update_user_name_endpoint(client, test_user, test_user_id, db_session):
     assert updated_user.last_name == new_last_name
 
 
-def test_update_nonexisting_user_name_fails(client, test_user):
+def test_update_nonexisting_user_name_fails(client, _test_user):
     new_first_name = "Updated"
     new_last_name = "Name"
 
@@ -91,7 +91,7 @@ def test_update_nonexisting_user_name_fails(client, test_user):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_user_name_missing_param_fails(client, test_user, test_user_id):
+def test_update_user_name_missing_param_fails(client, _test_user, test_user_id):
     new_first_name = "Updated"
     new_last_name = ""
 
