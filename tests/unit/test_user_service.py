@@ -3,7 +3,7 @@ from uuid import UUID
 import pytest
 from sqlalchemy.exc import NoResultFound
 
-from src.security.password import get_hashed_password, verify_password
+from src.security.password import verify_password
 from src.users.model.requests import ChangePasswordRequest, UpdateUserRequest
 from src.users.model.responses import (
     ChangePasswordResponse,
@@ -20,103 +20,43 @@ from src.users.service.user_service import (
 )
 
 
-def test_get_user(db_session):
-    user = User(
-        first_name="Dan",
-        last_name="Bar",
-        email="dan@test.com",
-        hashed_password=get_hashed_password("hashed"),
-    )
-    db_session.add(user)
-    db_session.commit()
+def test_get_user(db_session, _test_user, test_user_id):
+    found_user = get_user(UUID(test_user_id), db_session)
 
-    found_user = get_user(user.id, db_session)
-
-    assert found_user.email == user.email
+    assert found_user.email == _test_user.email
 
 
-def test_get_all_users(db_session):
-    user_1 = User(
-        first_name="Dan",
-        last_name="Bar",
-        email="dan@test.com",
-        hashed_password=get_hashed_password("hashed"),
-    )
-    user_2 = User(
-        first_name="Jeb",
-        last_name="Jebber",
-        email="jeb@mail.com",
-        hashed_password=get_hashed_password("hashed"),
-    )
-    db_session.add(user_1)
-    db_session.add(user_2)
-    db_session.commit()
-
+def test_get_all_users(db_session, _two_users, test_user_data, test_user_2_data):
     users = get_all_users(db_session)
 
-    assert user_1 in users
-    assert user_2 in users
+    user_emails = [user.email for user in users]
+
+    assert test_user_data.email in user_emails
+    assert test_user_2_data.email in user_emails
 
 
 def test_get_nonexisting_user_fails(db_session):
-    user = User(
-        first_name="Dan",
-        last_name="Bar",
-        email="dan@test.com",
-        hashed_password=get_hashed_password("hashed"),
-    )
-    db_session.add(user)
-    db_session.commit()
-
     random_user_id = UUID("3cbdc1b9-5f63-4d79-8a73-1d1d8e6a0d6f")
 
     with pytest.raises(NoResultFound):
         get_user(random_user_id, db_session)
 
 
-def test_delete_user(db_session):
-    user = User(
-        first_name="Dan",
-        last_name="Bar",
-        email="dan@test.com",
-        hashed_password=get_hashed_password("hashed"),
-    )
-    db_session.add(user)
-    db_session.commit()
-
-    delete_user(user.id, db_session)
+def test_delete_user(_test_user, test_user_id, db_session):
+    delete_user(UUID(test_user_id), db_session)
 
     with pytest.raises(NoResultFound):
-        get_user(user.id, db_session)
+        get_user(UUID(test_user_id), db_session)
 
 
 def test_delete_nonexisting_user_fails(db_session):
-    user = User(
-        first_name="Dan",
-        last_name="Bar",
-        email="dan@test.com",
-        hashed_password=get_hashed_password("hashed"),
-    )
-    db_session.add(user)
-    db_session.commit()
-
     random_user_id = UUID("3cbdc1b9-5f63-4d79-8a73-1d1d8e6a0d6f")
 
     with pytest.raises(NoResultFound):
         delete_user(random_user_id, db_session)
 
 
-def test_update_user_name(db_session, test_user_data, test_user_id):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_update_user_name(db_session, _test_user, test_user_data, test_user_id):
     new_user_first_name = "New"
     new_user_last_name = "Name"
 
@@ -125,24 +65,14 @@ def test_update_user_name(db_session, test_user_data, test_user_id):
         UUID(test_user_id),
         db_session,
     ) == UserResponse(
-        id=str(user.id),
-        email=user.email,
+        id=test_user_id,
+        email=test_user_data.email,
         first_name=new_user_first_name,
         last_name=new_user_last_name,
     )
 
 
-def test_update_nonexisting_user_name_fails(db_session, test_user_data, test_user_id):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_update_nonexisting_user_name_fails(db_session, _test_user):
     new_user_first_name = "New"
     new_user_last_name = "Name"
 
@@ -158,19 +88,7 @@ def test_update_nonexisting_user_name_fails(db_session, test_user_data, test_use
         )
 
 
-def test_update_user_name_missing_parameter_fails(
-    db_session, test_user_data, test_user_id
-):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_update_user_name_missing_parameter_fails(db_session, _test_user, test_user_id):
     new_user_first_name = "New"
     new_user_last_name = ""
 
@@ -185,21 +103,9 @@ def test_update_user_name_missing_parameter_fails(
     assert str(exctext.value) == "Missing required parameter"
 
 
-def test_change_password(db_session, test_user_data, test_user_id):
-    user = User(
-        id=UUID(test_user_id),
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_change_password(db_session, _test_user, test_user_data, test_user_id):
     new_user = db_session.get(User, UUID(test_user_id))
-
     new_password = "updated-pass"
-
     change_password_request = ChangePasswordRequest(
         current_password=test_user_data.password,
         new_password=new_password,
@@ -207,21 +113,14 @@ def test_change_password(db_session, test_user_data, test_user_id):
     )
 
     assert change_password(
-        change_password_request, user.id, db_session
+        change_password_request, UUID(test_user_id), db_session
     ) == ChangePasswordResponse(message="Password successfully changed")
     assert verify_password(new_password, new_user.hashed_password)
 
 
-def test_change_password_fails_wrong_confirm(db_session, test_user_data):
-    user = User(
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_change_password_fails_wrong_confirm(
+    db_session, _test_user, test_user_data, test_user_id
+):
     new_password = "updated-pass"
     wrong_new_pass = "wrong_pass"
 
@@ -230,22 +129,16 @@ def test_change_password_fails_wrong_confirm(db_session, test_user_data):
         new_password=new_password,
         new_password_confirm=wrong_new_pass,
     )
+
     with pytest.raises(InvalidPasswordConfirmError) as excinfo:
-        change_password(change_password_request, user.id, db_session)
+        change_password(change_password_request, UUID(test_user_id), db_session)
 
     assert str(excinfo.value) == "Confirm password doesn't match new password"
 
 
-def test_change_password_wrong_current_password_fails(db_session, test_user_data):
-    user = User(
-        first_name=test_user_data.first_name,
-        last_name=test_user_data.last_name,
-        email=test_user_data.email,
-        hashed_password=get_hashed_password(test_user_data.password),
-    )
-    db_session.add(user)
-    db_session.commit()
-
+def test_change_password_wrong_current_password_fails(
+    db_session, _test_user, test_user_id
+):
     new_password = "updated-pass"
     wrong_currrent_password = "wrong_pass"
 
@@ -255,4 +148,4 @@ def test_change_password_wrong_current_password_fails(db_session, test_user_data
         new_password_confirm=new_password,
     )
     with pytest.raises(AuthenticationError):
-        change_password(change_password_request, user.id, db_session)
+        change_password(change_password_request, UUID(test_user_id), db_session)
