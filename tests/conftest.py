@@ -187,6 +187,7 @@ def three_test_jobs(db_session, _two_users):
         description="Test job 2",
         due_date=datetime.now() + timedelta(days=1),
         priority=Priority.high,
+        is_completed=True,
     )
     job_3 = Job(
         id=uuid4(),

@@ -1,11 +1,14 @@
+from uuid import UUID
+
 from fastapi import Request, HTTPException
 from fastapi.routing import APIRouter
 from sqlalchemy.exc import NoResultFound
 from starlette import status
 
 from src.db.core import DbSession
+from src.errors.custom import AlreadyCompletedError
 from src.jobs.model.requests import CreateJobRequest
-from src.jobs.model.responses import CreateJobResponse, JobResponse
+from src.jobs.model.responses import CompleteJobResponse, CreateJobResponse, JobResponse
 from src.rate_limiting import limiter
 from src.jobs.service import job_service
 
@@ -48,3 +51,18 @@ async def create_job(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
     except NoResultFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}")
+
+
+@job_router.patch(
+    "/{id}/complete", status_code=status.HTTP_200_OK, response_model=CompleteJobResponse
+)
+@limiter.limit("5/hour")
+async def complete_job(
+    request: Request, id: UUID, db: DbSession
+) -> CompleteJobResponse:
+    try:
+        return job_service.complete_job(id, db)
+    except NoResultFound as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}")
+    except AlreadyCompletedError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")

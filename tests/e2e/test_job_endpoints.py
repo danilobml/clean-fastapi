@@ -140,3 +140,31 @@ def test_create_job_nonexisting_user_fails(client):
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_complete_job_endpoint(client, test_job):
+    response = client.patch(f"/jobs/{str(test_job.id)}/complete")
+
+    body = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert body.get("message") == "Job successfully completed"
+    assert test_job.is_completed is True
+
+
+def test_complete_nonexisting_job_fails(client):
+    nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
+
+    response = client.patch(f"/jobs/{nonexisting_job_id}/complete")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_complete_already_completed_job_fails(client, three_test_jobs):
+    completed_job = three_test_jobs[1]
+    response = client.patch(f"/jobs/{str(completed_job.id)}/complete")
+
+    body = response.json()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert body.get("detail") == "This job is already completed"
