@@ -38,10 +38,10 @@ def test_create_job_endpoint(client, _test_user, test_user_id):
     body = response.json()
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert user_id in body.values()
-    assert description in body.values()
-    assert due_date in body.values()
-    assert priority in body.values()
+    assert body.get("user_id") == user_id
+    assert body.get("description") == description
+    assert body.get("due_date") == due_date
+    assert body.get("priority") == priority
 
 
 def test_create_job_endpoint_no_priority_passes_with_medium(
@@ -60,10 +60,10 @@ def test_create_job_endpoint_no_priority_passes_with_medium(
     body = response.json()
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert user_id in body.values()
-    assert description in body.values()
-    assert due_date in body.values()
-    assert default_priority in body.values()
+    assert body.get("user_id") == user_id
+    assert body.get("description") == description
+    assert body.get("due_date") == due_date
+    assert body.get("priority") == default_priority
 
 
 def test_create_job_invalid_user_id_fails(client):
@@ -139,4 +139,4 @@ def test_create_job_nonexisting_user_fails(client):
         },
     )
 
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.status_code == status.HTTP_404_NOT_FOUND

@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 import pytest
+from sqlalchemy.exc import NoResultFound
 
 from src.entities.job import Job, Priority
-from src.errors.custom import UnauthorizedError
 from src.jobs.model.requests import CreateJobRequest
 from src.jobs.service import job_service
 
@@ -82,5 +82,5 @@ def test_create_job_nonexisting_user_id_fails(_test_user, db_session):
         priority=Priority.medium,
     )
 
-    with pytest.raises(UnauthorizedError):
+    with pytest.raises(NoResultFound):
         job_service.create_job(create_job_request, db_session)

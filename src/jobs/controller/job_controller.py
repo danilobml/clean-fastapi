@@ -1,9 +1,9 @@
 from fastapi import Request, HTTPException
 from fastapi.routing import APIRouter
+from sqlalchemy.exc import NoResultFound
 from starlette import status
 
 from src.db.core import DbSession
-from src.errors.custom import UnauthorizedError
 from src.jobs.model.requests import CreateJobRequest
 from src.jobs.model.responses import CreateJobResponse, JobResponse
 from src.rate_limiting import limiter
@@ -46,5 +46,5 @@ async def create_job(
         return job_service.create_job(create_job_request, db)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
-    except UnauthorizedError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{e}")
+    except NoResultFound as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}")
