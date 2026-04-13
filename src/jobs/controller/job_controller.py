@@ -1,9 +1,11 @@
 from fastapi import Request, HTTPException
 from fastapi.routing import APIRouter
+from sqlalchemy.exc import NoResultFound
 from starlette import status
 
 from src.db.core import DbSession
-from src.jobs.model.responses import JobResponse
+from src.jobs.model.requests import CreateJobRequest
+from src.jobs.model.responses import CreateJobResponse, JobResponse
 from src.rate_limiting import limiter
 from src.jobs.service import job_service
 
@@ -31,3 +33,18 @@ async def get_all_jobs(request: Request, db: DbSession) -> list[JobResponse]:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}"
         )
+
+
+@job_router.post(
+    "/", status_code=status.HTTP_201_CREATED, response_model=CreateJobResponse
+)
+@limiter.limit("5/hour")
+async def create_job(
+    request: Request, create_job_request: CreateJobRequest, db: DbSession
+) -> CreateJobResponse:
+    try:
+        return job_service.create_job(create_job_request, db)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
+    except NoResultFound as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}")

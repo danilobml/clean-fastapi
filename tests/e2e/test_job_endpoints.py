@@ -1,3 +1,5 @@
+from starlette import status
+
 from src.jobs.model.responses import JobResponse
 
 
@@ -11,6 +13,130 @@ def test_get_all_jobs_endpoint(client, three_test_jobs):
         assert JobResponse(**job)
         job_ids.append(job.get("id"))
 
+    assert response.status_code == status.HTTP_200_OK
     assert str(three_test_jobs[0].id) in job_ids
     assert str(three_test_jobs[1].id) in job_ids
     assert str(three_test_jobs[2].id) in job_ids
+
+
+def test_create_job_endpoint(client, _test_user, test_user_id):
+    user_id = test_user_id
+    description = "Test Job"
+    due_date = "2026-04-14T15:42:10.123456"
+    priority = "medium"
+
+    response = client.post(
+        "/jobs",
+        json={
+            "user_id": user_id,
+            "description": description,
+            "due_date": due_date,
+            "priority": priority,
+        },
+    )
+
+    body = response.json()
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert body.get("user_id") == user_id
+    assert body.get("description") == description
+    assert body.get("due_date") == due_date
+    assert body.get("priority") == priority
+
+
+def test_create_job_endpoint_no_priority_passes_with_medium(
+    client, _test_user, test_user_id
+):
+    user_id = test_user_id
+    description = "Test Job"
+    due_date = "2026-04-14T15:42:10.123456"
+    default_priority = "medium"
+
+    response = client.post(
+        "/jobs",
+        json={"user_id": user_id, "description": description, "due_date": due_date},
+    )
+
+    body = response.json()
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert body.get("user_id") == user_id
+    assert body.get("description") == description
+    assert body.get("due_date") == due_date
+    assert body.get("priority") == default_priority
+
+
+def test_create_job_invalid_user_id_fails(client):
+    user_id = "123"
+    description = "Test Job"
+    due_date = "2026-04-14T15:42:10.123456"
+    priority = "medium"
+
+    response = client.post(
+        "/jobs",
+        json={
+            "user_id": user_id,
+            "description": description,
+            "due_date": due_date,
+            "priority": priority,
+        },
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+def test_create_job_invalid_due_date_fails(client, test_user_id):
+    user_id = test_user_id
+    description = "Test Job"
+    due_date = "02.03.2026"
+    priority = "medium"
+
+    response = client.post(
+        "/jobs",
+        json={
+            "user_id": user_id,
+            "description": description,
+            "due_date": due_date,
+            "priority": priority,
+        },
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+def test_create_job_invalid_priority_fails(client, test_user_id):
+    user_id = test_user_id
+    description = "Test Job"
+    due_date = "2026-04-14T15:42:10.123456"
+    priority = "super"
+
+    response = client.post(
+        "/jobs",
+        json={
+            "user_id": user_id,
+            "description": description,
+            "due_date": due_date,
+            "priority": priority,
+        },
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+def test_create_job_nonexisting_user_fails(client):
+    nonexisting_user_id = "550e8400-e29b-41d4-a716-446655440000"
+    description = "Test Job"
+    due_date = "2026-04-14T15:42:10.123456"
+    priority = "medium"
+
+    response = client.post(
+        "/jobs",
+        json={
+            "user_id": nonexisting_user_id,
+            "description": description,
+            "due_date": due_date,
+            "priority": priority,
+        },
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
