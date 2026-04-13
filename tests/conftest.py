@@ -1,5 +1,5 @@
 import os
-from uuid import UUID
+from uuid import UUID, uuid4
 import jwt
 import pytest
 from dataclasses import dataclass
@@ -157,9 +157,9 @@ def _two_users(db_session, test_user_data, test_user_2_data):
 @pytest.fixture(scope="function")
 def test_job(db_session):
     job = Job(
-        id=UUID("9f3c2d6e-6f0b-4b2a-8e1d-1c7d5a9e2f44"),
+        id=uuid4(),
         user_id=UUID(TEST_USER_ID),
-        description="Test job 1",
+        description="Test job",
         due_date=datetime.now() + timedelta(days=2),
         priority=Priority.medium,
     )
@@ -172,23 +172,25 @@ def test_job(db_session):
 
 @pytest.fixture(scope="function")
 def three_test_jobs(db_session, _two_users):
+    user_1, user_2 = _two_users
+
     job_1 = Job(
-        id=UUID("9f3c2d6e-6f0b-4b2a-8e1d-1c7d5a9e2f44"),
-        user_id=UUID(TEST_USER_ID),
+        id=uuid4(),
+        user_id=user_1.id,
         description="Test job 1",
         due_date=datetime.now() + timedelta(days=2),
         priority=Priority.medium,
     )
     job_2 = Job(
-        id=UUID("c1a7e5d3-9b62-4f8d-a3c9-6e0f1b2d7a88"),
-        user_id=UUID(TEST_USER_ID),
+        id=uuid4(),
+        user_id=user_1.id,
         description="Test job 2",
         due_date=datetime.now() + timedelta(days=1),
         priority=Priority.high,
     )
     job_3 = Job(
-        id=UUID("4d8f0a2b-3c71-4e95-b6d2-9a1f7c5e8b33"),
-        user_id=UUID(TEST_USER_ID_2),
+        id=uuid4(),
+        user_id=user_2.id,
         description="Test job 3",
         due_date=datetime.now() + timedelta(days=5),
         priority=Priority.low,

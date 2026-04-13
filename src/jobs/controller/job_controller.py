@@ -27,5 +27,7 @@ async def get_all_jobs(request: Request, db: DbSession) -> list[JobResponse]:
             )
             for job in jobs
         ]
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}"
+        )
