@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy.exc import NoResultFound
 
 from src.entities.job import Job, Priority
+from src.errors.custom import AlreadyCompletedError
 from src.jobs.model.requests import CreateJobRequest
 from src.jobs.service import job_service
 
@@ -84,3 +85,25 @@ def test_create_job_nonexisting_user_id_fails(_test_user, db_session):
 
     with pytest.raises(NoResultFound):
         job_service.create_job(create_job_request, db_session)
+
+
+def test_complete_job(test_job, db_session):
+    job_service.complete_job(test_job.id, db_session)
+
+    job = db_session.get(Job, test_job.id)
+
+    assert job.is_completed is True
+
+
+def test_complete_nonexisting_job_fails(db_session):
+    nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
+
+    with pytest.raises(NoResultFound):
+        job_service.complete_job(UUID(nonexisting_job_id), db_session)
+
+
+def test_complete_already_completed_job_fails(three_test_jobs, db_session):
+    completed_job = three_test_jobs[1]
+
+    with pytest.raises(AlreadyCompletedError):
+        job_service.complete_job(completed_job.id, db_session)

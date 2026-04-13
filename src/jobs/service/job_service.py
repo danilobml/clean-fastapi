@@ -1,10 +1,14 @@
+from uuid import UUID
+
+from sqlalchemy import update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
 from src.entities.job import Job, Priority
 from src.entities.user import User
+from src.errors.custom import AlreadyCompletedError
 from src.jobs.model.requests import CreateJobRequest
-from src.jobs.model.responses import CreateJobResponse
+from src.jobs.model.responses import CompleteJobResponse, CreateJobResponse
 
 
 def get_all_jobs(db: Session) -> list[Job]:
@@ -37,3 +41,22 @@ def create_job(request: CreateJobRequest, db: Session) -> CreateJobResponse:
         due_date=new_job.due_date,
         priority=new_job.priority,
     )
+
+
+def complete_job(job_id: UUID, db: Session) -> CompleteJobResponse:
+    result = db.execute(
+        update(Job)
+        .where(Job.id == job_id, Job.is_completed.is_(False))
+        .values(is_completed=True)
+    )
+
+    if result.rowcount == 1:  # type: ignore[attr-defined]
+        db.commit()
+        return CompleteJobResponse(message="Job successfully completed")
+
+    job = db.get(Job, job_id)
+
+    if not job:
+        raise NoResultFound()
+
+    raise AlreadyCompletedError()

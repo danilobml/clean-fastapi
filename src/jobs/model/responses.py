@@ -21,3 +21,7 @@ class CreateJobResponse(BaseModel):
     description: str
     due_date: datetime
     priority: Priority
+
+
+class CompleteJobResponse(BaseModel):
+    message: str
