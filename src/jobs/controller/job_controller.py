@@ -62,7 +62,9 @@ async def complete_job(
 ) -> CompleteJobResponse:
     try:
         return job_service.complete_job(id, db)
-    except NoResultFound as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}")
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+        )
     except AlreadyCompletedError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
