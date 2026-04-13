@@ -13,3 +13,11 @@ class JobResponse(BaseModel):
     due_date: datetime
     priority: Priority
     is_completed: bool
+
+
+class CreateJobResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    description: str
+    due_date: datetime
+    priority: Priority
