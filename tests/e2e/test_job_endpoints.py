@@ -149,9 +149,15 @@ def test_complete_job_endpoint(client, test_job):
 
     assert response.status_code == status.HTTP_200_OK
     assert body.get("message") == "Job successfully completed"
-    assert test_job.is_completed is True
 
+    get_response = client.get("/jobs")
+    get_body = get_response.json()
 
+    assert get_response.status_code == status.HTTP_200_OK
+
+    completed_job = next(job for job in get_body if job.get("id") == str(test_job.id))
+    assert JobResponse(**completed_job)
+    assert completed_job.get("is_completed") is True
 def test_complete_nonexisting_job_fails(client):
     nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
 
