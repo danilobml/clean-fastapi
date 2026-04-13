@@ -155,7 +155,9 @@ def test_complete_job_endpoint(client, test_job):
 
     assert get_response.status_code == status.HTTP_200_OK
 
-    completed_job = next(job for job in get_body if job.get("id") == str(test_job.id))
+    completed_job = next(
+        job for job in get_body if job.get("id") == str(test_job.id)
+    )
     assert JobResponse(**completed_job)
     assert completed_job.get("is_completed") is True
 def test_complete_nonexisting_job_fails(client):
