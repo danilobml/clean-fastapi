@@ -7,7 +7,6 @@ from sqlalchemy.exc import NoResultFound
 from src.entities.job import Job, Priority
 from src.errors.custom import AlreadyCompletedError
 from src.jobs.model.requests import CreateJobRequest
-from src.jobs.model.responses import CompleteJobResponse
 from src.jobs.service import job_service
 
 
@@ -89,10 +88,11 @@ def test_create_job_nonexisting_user_id_fails(_test_user, db_session):
 
 
 def test_complete_job(test_job, db_session):
-    assert job_service.complete_job(test_job.id, db_session) == CompleteJobResponse(
-        message="Job successfully completed"
-    )
-    assert test_job.is_completed is True
+    job_service.complete_job(test_job.id, db_session)
+
+    job = db_session.get(Job, test_job.id)
+
+    assert job.is_completed is True
 
 
 def test_complete_nonexisting_job_fails(db_session):
