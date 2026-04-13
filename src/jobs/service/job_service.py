@@ -13,7 +13,7 @@ def get_all_jobs(db: Session) -> list[Job]:
 
 def create_job(request: CreateJobRequest, db: Session) -> CreateJobResponse:
     if request.description == "":
-        raise ValueError("Missing required parameters")
+        raise ValueError("description must be non-empty")
 
     user = db.get(User, request.user_id)
     if not user:
