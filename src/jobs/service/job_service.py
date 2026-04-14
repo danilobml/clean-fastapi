@@ -63,9 +63,9 @@ def complete_job(job_id: UUID, db: Session) -> CompleteJobResponse:
 
 
 def delete_job(id: UUID, db: Session) -> None:
-    result = db.execute(delete(Job).where(Job.id == id))
+    deleted_count = db.query(Job).filter(Job.id == id).delete()
 
-    if result.rowcount == 1:  # type: ignore[attr-defined]
+    if deleted_count == 1:
         db.commit()
         return
 
