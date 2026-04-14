@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import update
+from sqlalchemy import delete, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
@@ -60,3 +60,13 @@ def complete_job(job_id: UUID, db: Session) -> CompleteJobResponse:
         raise NoResultFound()
 
     raise AlreadyCompletedError()
+
+
+def delete_job(id: UUID, db: Session) -> None:
+    result = db.execute(delete(Job).where(Job.id == id))
+
+    if result.rowcount == 1:  # type: ignore[attr-defined]
+        db.commit()
+        return
+
+    raise NoResultFound()

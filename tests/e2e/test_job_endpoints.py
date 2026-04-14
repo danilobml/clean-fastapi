@@ -155,11 +155,11 @@ def test_complete_job_endpoint(client, test_job):
 
     assert get_response.status_code == status.HTTP_200_OK
 
-    completed_job = next(
-        job for job in get_body if job.get("id") == str(test_job.id)
-    )
+    completed_job = next(job for job in get_body if job.get("id") == str(test_job.id))
     assert JobResponse(**completed_job)
     assert completed_job.get("is_completed") is True
+
+
 def test_complete_nonexisting_job_fails(client):
     nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
 
@@ -176,3 +176,17 @@ def test_complete_already_completed_job_fails(client, three_test_jobs):
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert body.get("detail") == "This job is already completed"
+
+
+def test_delete_job_endpoint(client, test_job):
+    response = client.delete(f"/jobs/{str(test_job.id)}")
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+def test_delete_nonexisting_job_fails(client):
+    nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
+
+    response = client.delete(f"/jobs/{nonexisting_job_id}")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND

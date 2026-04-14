@@ -68,3 +68,14 @@ async def complete_job(
         )
     except AlreadyCompletedError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
+
+
+@job_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/hour")
+async def delete_job(request: Request, id: UUID, db: DbSession) -> None:
+    try:
+        job_service.delete_job(id, db)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+        )
