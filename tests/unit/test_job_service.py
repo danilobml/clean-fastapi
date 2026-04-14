@@ -107,3 +107,18 @@ def test_complete_already_completed_job_fails(three_test_jobs, db_session):
 
     with pytest.raises(AlreadyCompletedError):
         job_service.complete_job(completed_job.id, db_session)
+
+
+def test_delete_job(test_job, db_session):
+    job_service.delete_job(test_job.id, db_session)
+
+    job = db_session.get(Job, test_job.id)
+
+    assert job is None
+
+
+def test_delete_nonexisting_job_fails(db_session):
+    nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
+
+    with pytest.raises(NoResultFound):
+        job_service.delete_job(UUID(nonexisting_job_id), db_session)
