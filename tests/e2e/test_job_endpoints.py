@@ -183,7 +183,13 @@ def test_delete_job_endpoint(client, test_job):
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
+    get_response = client.get("/jobs")
+    get_body = get_response.json()
 
+    assert get_response.status_code == status.HTTP_200_OK
+
+    job_ids = [job.get("id") for job in get_body]
+    assert str(test_job.id) not in job_ids
 def test_delete_nonexisting_job_fails(client):
     nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
 
