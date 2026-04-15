@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.entities.job import Job, Priority
 from src.entities.user import User
-from src.errors.custom import AlreadyCompletedError, NonexistingUserError
+from src.errors.custom import AlreadyCompletedError, DBError, NonexistingUserError
 from src.jobs.model.requests import CreateJobRequest, UpdateJobRequest
 from src.jobs.model.responses import CompleteJobResponse, CreateJobResponse, JobResponse
 
@@ -88,13 +88,15 @@ def update_job(
     new_description = (
         update_job_request.description
         if (update_job_request.description and update_job_request.description != "")
-        else job.user_id
+        else job.description
     )
     new_due_date = update_job_request.due_date or job.due_date
     new_priority = update_job_request.priority or job.priority
 
     result = db.execute(
-        update(Job).values(
+        update(Job)
+        .where(Job.id == job_id)
+        .values(
             user_id=new_user_id,
             description=new_description,
             due_date=new_due_date,
@@ -106,7 +108,7 @@ def update_job(
         db.commit()
         db.refresh(job)
     else:
-        raise Exception("DB Update failed")
+        raise DBError()
 
     return JobResponse(
         id=job.id,

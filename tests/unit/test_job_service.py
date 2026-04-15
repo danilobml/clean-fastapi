@@ -148,18 +148,16 @@ def test_update_job(_two_users, test_job, db_session):
 
 def test_update_job_partial_update(test_job, _test_user, db_session):
     job_id = test_job.id
-    new_description = "Updated description"
+    new_priority = Priority.high
 
-    update_job_request = UpdateJobRequest(
-        description=new_description,
-    )
+    update_job_request = UpdateJobRequest(priority=new_priority)
 
     updated_job = job_service.update_job(job_id, update_job_request, db_session)
 
     assert updated_job.user_id == test_job.user_id
-    assert updated_job.description == new_description
+    assert updated_job.description == test_job.description
     assert updated_job.due_date == test_job.due_date
-    assert updated_job.priority == test_job.priority
+    assert updated_job.priority == new_priority
 
 
 def test_update_nonexisting_job_fails(db_session):

@@ -16,3 +16,8 @@ class AlreadyCompletedError(Exception):
 class NonexistingUserError(Exception):
     def __init__(self):
         super().__init__("User not found")
+
+
+class DBError(Exception):
+    def __init__(self):
+        super().__init__("DB failed")
