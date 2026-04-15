@@ -15,6 +15,9 @@ from src.db.core import get_db
 from src.entities.job import Job, Priority
 from src.entities.user import User
 from src.security.password import get_hashed_password
+from src.rate_limiting import limiter
+
+limiter.enabled = False
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
