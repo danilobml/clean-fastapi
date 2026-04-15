@@ -5,8 +5,8 @@ import pytest
 from sqlalchemy.exc import NoResultFound
 
 from src.entities.job import Job, Priority
-from src.errors.custom import AlreadyCompletedError
-from src.jobs.model.requests import CreateJobRequest
+from src.errors.custom import AlreadyCompletedError, NonexistingUserError
+from src.jobs.model.requests import CreateJobRequest, UpdateJobRequest
 from src.jobs.service import job_service
 
 
@@ -122,3 +122,71 @@ def test_delete_nonexisting_job_fails(db_session):
 
     with pytest.raises(NoResultFound):
         job_service.delete_job(UUID(nonexisting_job_id), db_session)
+
+
+def test_update_job(_two_users, test_job, db_session):
+    job_id = test_job.id
+    new_user_id = _two_users[1].id
+    new_description = "Updated description"
+    new_due_date = datetime.now() + timedelta(days=3)
+    new_priority = Priority.high
+
+    update_job_request = UpdateJobRequest(
+        user_id=new_user_id,
+        description=new_description,
+        due_date=new_due_date,
+        priority=new_priority,
+    )
+
+    updated_job = job_service.update_job(job_id, update_job_request, db_session)
+
+    assert updated_job.user_id == new_user_id
+    assert updated_job.description == new_description
+    assert updated_job.due_date == new_due_date
+    assert updated_job.priority == new_priority
+
+
+def test_update_job_partial_update(test_job, _test_user, db_session):
+    job_id = test_job.id
+    new_description = "Updated description"
+
+    update_job_request = UpdateJobRequest(
+        description=new_description,
+    )
+
+    updated_job = job_service.update_job(job_id, update_job_request, db_session)
+
+    assert updated_job.user_id == test_job.user_id
+    assert updated_job.description == new_description
+    assert updated_job.due_date == test_job.due_date
+    assert updated_job.priority == test_job.priority
+
+
+def test_update_nonexisting_job_fails(db_session):
+    nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
+    new_description = "Updated description"
+
+    update_job_request = UpdateJobRequest(
+        description=new_description,
+    )
+
+    with pytest.raises(NoResultFound):
+        job_service.update_job(UUID(nonexisting_job_id), update_job_request, db_session)
+
+
+def test_update_job_nonexisting_user_fails(test_job, db_session):
+    job_id = test_job.id
+    nonexisting_user_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
+    new_description = "Updated description"
+    new_due_date = datetime.now() + timedelta(days=3)
+    new_priority = Priority.high
+
+    update_job_request = UpdateJobRequest(
+        user_id=UUID(nonexisting_user_id),
+        description=new_description,
+        due_date=new_due_date,
+        priority=new_priority,
+    )
+
+    with pytest.raises(NonexistingUserError):
+        job_service.update_job(job_id, update_job_request, db_session)

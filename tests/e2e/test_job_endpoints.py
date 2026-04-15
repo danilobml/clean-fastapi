@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from starlette import status
 
 from src.jobs.model.responses import JobResponse
@@ -190,9 +192,98 @@ def test_delete_job_endpoint(client, test_job):
 
     job_ids = [job.get("id") for job in get_body]
     assert str(test_job.id) not in job_ids
+
+
 def test_delete_nonexisting_job_fails(client):
     nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
 
     response = client.delete(f"/jobs/{nonexisting_job_id}")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_update_job_endpoint(client, test_job, _two_users):
+    new_user_id = str(_two_users[1].id)
+    new_description = "Updated description"
+    new_due_date = (datetime.now() + timedelta(days=3)).isoformat()
+    new_priority = "high"
+
+    response = client.put(
+        f"/jobs/{test_job.id}",
+        json={
+            "user_id": new_user_id,
+            "description": new_description,
+            "due_date": new_due_date,
+            "priority": new_priority,
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == status.HTTP_200_OK
+    assert body.get("user_id") == new_user_id
+    assert body.get("description") == new_description
+    assert body.get("due_date") == new_due_date
+    assert body.get("priority") == new_priority
+
+    get_response = client.get("/jobs")
+    get_body = get_response.json()
+
+    assert get_response.status_code == status.HTTP_200_OK
+    updated_job = next(job for job in get_body if job.get("id") == str(test_job.id))
+    assert JobResponse(**updated_job)
+    assert updated_job.get("user_id") == new_user_id
+    assert updated_job.get("description") == new_description
+    assert updated_job.get("due_date") == new_due_date
+    assert updated_job.get("priority") == new_priority
+
+
+def test_update_job_endpoint_partial(client, test_job, _test_user):
+    current_user_id = str(test_job.user_id)
+    current_due_date = test_job.due_date.isoformat()
+    current_priority = test_job.priority.value
+    new_description = "Updated description"
+
+    response = client.put(
+        f"/jobs/{str(test_job.id)}", json={"description": new_description}
+    )
+
+    body = response.json()
+    assert response.status_code == status.HTTP_200_OK
+    assert body.get("user_id") == current_user_id
+    assert body.get("description") == new_description
+    assert body.get("due_date") == current_due_date
+    assert body.get("priority") == current_priority
+
+    get_response = client.get("/jobs")
+    get_body = get_response.json()
+
+    assert get_response.status_code == status.HTTP_200_OK
+    updated_job = next(job for job in get_body if job.get("id") == str(test_job.id))
+    assert JobResponse(**updated_job)
+    assert updated_job.get("user_id") == current_user_id
+    assert updated_job.get("description") == new_description
+    assert updated_job.get("due_date") == current_due_date
+    assert updated_job.get("priority") == current_priority
+
+
+def test_update_nonexisting_job_fails(client):
+    nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
+    new_description = "Updated description"
+
+    response = client.put(
+        f"/jobs/{nonexisting_job_id}", json={"description": new_description}
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_update_job_nonexisting_user_fails(client, test_job):
+    nonexisting_user_id = "3f8c1b9e-7d4a-4e62-9a1c-5f2d8e6b3c71"
+    new_description = "Updated description"
+
+    response = client.put(
+        f"/jobs/{str(test_job.id)}",
+        json={"description": new_description, "user_id": nonexisting_user_id},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST

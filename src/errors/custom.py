@@ -11,3 +11,8 @@ class InvalidPasswordConfirmError(Exception):
 class AlreadyCompletedError(Exception):
     def __init__(self):
         super().__init__("This job is already completed")
+
+
+class NonexistingUserError(Exception):
+    def __init__(self):
+        super().__init__("User not found")
