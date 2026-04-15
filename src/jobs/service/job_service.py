@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from sqlalchemy import update
@@ -21,6 +22,7 @@ def create_job(request: CreateJobRequest, db: Session) -> CreateJobResponse:
 
     user = db.get(User, request.user_id)
     if not user:
+        logging.warning(f"No user found with id {request.user_id}")
         raise NoResultFound()
 
     new_job = Job(
@@ -57,8 +59,10 @@ def complete_job(job_id: UUID, db: Session) -> CompleteJobResponse:
     job = db.get(Job, job_id)
 
     if not job:
+        logging.warning(f"No job found with id {job_id}")
         raise NoResultFound()
 
+    logging.warning(f"Attempted to complete already completed job with id {job_id}")
     raise AlreadyCompletedError()
 
 
@@ -69,6 +73,7 @@ def delete_job(job_id: UUID, db: Session) -> None:
         db.commit()
         return
 
+    logging.warning(f"No job found with id {job_id}")
     raise NoResultFound()
 
 
@@ -77,11 +82,13 @@ def update_job(
 ) -> JobResponse:
     job = db.get(Job, job_id)
     if not job:
+        logging.warning(f"No job found with id {job_id}")
         raise NoResultFound()
 
     if update_job_request.user_id:
         user = db.get(User, update_job_request.user_id)
         if not user:
+            logging.warning(f"No user found with id {update_job_request.user_id}")
             raise NonexistingUserError()
 
     new_user_id = update_job_request.user_id or job.user_id
@@ -108,6 +115,7 @@ def update_job(
         db.commit()
         db.refresh(job)
     else:
+        logging.warning(f"Failed DB operation at update job with id {job_id}")
         raise DBError()
 
     return JobResponse(
