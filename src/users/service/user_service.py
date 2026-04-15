@@ -77,6 +77,7 @@ def change_password(
         raise
 
     if not verify_password(request.current_password, user.hashed_password):
+        logging.warning(f"Authentication failed for user with id {user_id}")
         raise AuthenticationError()
 
     user.hashed_password = get_hashed_password(request.new_password)
