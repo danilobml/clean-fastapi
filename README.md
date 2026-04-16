@@ -175,9 +175,9 @@ Rate limit: set to `5/hour` on endpoints.
 Protected endpoints are JWT-based. Typical usage:
 
 1. Register: `POST /auth/register`
-    json body: `{"first_name": str, "last_name": str, "email": str, "password": str}`
+    - json body: `{"first_name": str, "last_name": str, "email": str, "password": str}`
 2. Login: `POST /auth/login` to get an access token
-    form-data: `username` (email), `password`
+    - form-data: `username` (email), `password`
 3. Call protected endpoints with:
 
 ```http
