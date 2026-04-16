@@ -5,8 +5,8 @@ from starlette import status
 from src.jobs.model.responses import JobResponse
 
 
-def test_get_all_jobs_endpoint(client, three_test_jobs):
-    response = client.get("/jobs")
+def test_get_all_jobs_endpoint(client, three_test_jobs, auth_headers):
+    response = client.get("/jobs", headers=auth_headers)
 
     body = response.json()
 
@@ -21,7 +21,13 @@ def test_get_all_jobs_endpoint(client, three_test_jobs):
     assert str(three_test_jobs[2].id) in job_ids
 
 
-def test_create_job_endpoint(client, _test_user, test_user_id):
+def test_get_all_jobs_unauthorized_user_fails(client):
+    response = client.get("/jobs")
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_create_job_endpoint(client, _test_user, test_user_id, auth_headers):
     user_id = test_user_id
     description = "Test Job"
     due_date = "2026-04-14T15:42:10.123456"
@@ -35,6 +41,7 @@ def test_create_job_endpoint(client, _test_user, test_user_id):
             "due_date": due_date,
             "priority": priority,
         },
+        headers=auth_headers,
     )
 
     body = response.json()
@@ -47,7 +54,7 @@ def test_create_job_endpoint(client, _test_user, test_user_id):
 
 
 def test_create_job_endpoint_no_priority_passes_with_medium(
-    client, _test_user, test_user_id
+    client, _test_user, test_user_id, auth_headers
 ):
     user_id = test_user_id
     description = "Test Job"
@@ -57,6 +64,7 @@ def test_create_job_endpoint_no_priority_passes_with_medium(
     response = client.post(
         "/jobs",
         json={"user_id": user_id, "description": description, "due_date": due_date},
+        headers=auth_headers,
     )
 
     body = response.json()
@@ -68,7 +76,7 @@ def test_create_job_endpoint_no_priority_passes_with_medium(
     assert body.get("priority") == default_priority
 
 
-def test_create_job_invalid_user_id_fails(client):
+def test_create_job_invalid_user_id_fails(client, auth_headers):
     user_id = "123"
     description = "Test Job"
     due_date = "2026-04-14T15:42:10.123456"
@@ -82,12 +90,13 @@ def test_create_job_invalid_user_id_fails(client):
             "due_date": due_date,
             "priority": priority,
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
-def test_create_job_invalid_due_date_fails(client, test_user_id):
+def test_create_job_invalid_due_date_fails(client, test_user_id, auth_headers):
     user_id = test_user_id
     description = "Test Job"
     due_date = "02.03.2026"
@@ -101,12 +110,13 @@ def test_create_job_invalid_due_date_fails(client, test_user_id):
             "due_date": due_date,
             "priority": priority,
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
-def test_create_job_invalid_priority_fails(client, test_user_id):
+def test_create_job_invalid_priority_fails(client, test_user_id, auth_headers):
     user_id = test_user_id
     description = "Test Job"
     due_date = "2026-04-14T15:42:10.123456"
@@ -120,12 +130,13 @@ def test_create_job_invalid_priority_fails(client, test_user_id):
             "due_date": due_date,
             "priority": priority,
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
-def test_create_job_nonexisting_user_fails(client):
+def test_create_job_nonexisting_user_fails(client, auth_headers):
     nonexisting_user_id = "550e8400-e29b-41d4-a716-446655440000"
     description = "Test Job"
     due_date = "2026-04-14T15:42:10.123456"
@@ -139,20 +150,40 @@ def test_create_job_nonexisting_user_fails(client):
             "due_date": due_date,
             "priority": priority,
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_complete_job_endpoint(client, test_job):
-    response = client.patch(f"/jobs/{str(test_job.id)}/complete")
+def test_create_job_unauthorized_user_fails(client):
+    user_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
+    description = "Test Job"
+    due_date = "2026-04-14T15:42:10.123456"
+    priority = "medium"
+
+    response = client.post(
+        "/jobs",
+        json={
+            "user_id": user_id,
+            "description": description,
+            "due_date": due_date,
+            "priority": priority,
+        },
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_complete_job_endpoint(client, test_job, auth_headers):
+    response = client.patch(f"/jobs/{str(test_job.id)}/complete", headers=auth_headers)
 
     body = response.json()
 
     assert response.status_code == status.HTTP_200_OK
     assert body.get("message") == "Job successfully completed"
 
-    get_response = client.get("/jobs")
+    get_response = client.get("/jobs", headers=auth_headers)
     get_body = get_response.json()
 
     assert get_response.status_code == status.HTTP_200_OK
@@ -162,17 +193,21 @@ def test_complete_job_endpoint(client, test_job):
     assert completed_job.get("is_completed") is True
 
 
-def test_complete_nonexisting_job_fails(client):
+def test_complete_nonexisting_job_fails(client, auth_headers):
     nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
 
-    response = client.patch(f"/jobs/{nonexisting_job_id}/complete")
+    response = client.patch(
+        f"/jobs/{nonexisting_job_id}/complete", headers=auth_headers
+    )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_complete_already_completed_job_fails(client, three_test_jobs):
+def test_complete_already_completed_job_fails(client, three_test_jobs, auth_headers):
     completed_job = three_test_jobs[1]
-    response = client.patch(f"/jobs/{str(completed_job.id)}/complete")
+    response = client.patch(
+        f"/jobs/{str(completed_job.id)}/complete", headers=auth_headers
+    )
 
     body = response.json()
 
@@ -180,12 +215,18 @@ def test_complete_already_completed_job_fails(client, three_test_jobs):
     assert body.get("detail") == "This job is already completed"
 
 
-def test_delete_job_endpoint(client, test_job):
-    response = client.delete(f"/jobs/{str(test_job.id)}")
+def test_complete_job_unauthorized_user_fails(client):
+    response = client.patch("/jobs/c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13/complete")
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_delete_job_endpoint(client, test_job, auth_headers):
+    response = client.delete(f"/jobs/{str(test_job.id)}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    get_response = client.get("/jobs")
+    get_response = client.get("/jobs", headers=auth_headers)
     get_body = get_response.json()
 
     assert get_response.status_code == status.HTTP_200_OK
@@ -194,15 +235,21 @@ def test_delete_job_endpoint(client, test_job):
     assert str(test_job.id) not in job_ids
 
 
-def test_delete_nonexisting_job_fails(client):
+def test_delete_nonexisting_job_fails(client, auth_headers):
     nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
 
-    response = client.delete(f"/jobs/{nonexisting_job_id}")
+    response = client.delete(f"/jobs/{nonexisting_job_id}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_job_endpoint(client, test_job, _two_users):
+def test_delete_job_unauthorized_user_fails(client):
+    response = client.delete("/jobs/c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13")
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_update_job_endpoint(client, test_job, _two_users, auth_headers):
     new_user_id = str(_two_users[1].id)
     new_description = "Updated description"
     new_due_date = (datetime.now() + timedelta(days=3)).isoformat()
@@ -216,6 +263,7 @@ def test_update_job_endpoint(client, test_job, _two_users):
             "due_date": new_due_date,
             "priority": new_priority,
         },
+        headers=auth_headers,
     )
 
     body = response.json()
@@ -225,7 +273,7 @@ def test_update_job_endpoint(client, test_job, _two_users):
     assert body.get("due_date") == new_due_date
     assert body.get("priority") == new_priority
 
-    get_response = client.get("/jobs")
+    get_response = client.get("/jobs", headers=auth_headers)
     get_body = get_response.json()
 
     assert get_response.status_code == status.HTTP_200_OK
@@ -237,14 +285,16 @@ def test_update_job_endpoint(client, test_job, _two_users):
     assert updated_job.get("priority") == new_priority
 
 
-def test_update_job_endpoint_partial(client, test_job, _test_user):
+def test_update_job_endpoint_partial(client, test_job, _test_user, auth_headers):
     current_user_id = str(test_job.user_id)
     current_due_date = test_job.due_date.isoformat()
     current_priority = test_job.priority.value
     new_description = "Updated description"
 
     response = client.put(
-        f"/jobs/{str(test_job.id)}", json={"description": new_description}
+        f"/jobs/{str(test_job.id)}",
+        json={"description": new_description},
+        headers=auth_headers,
     )
 
     body = response.json()
@@ -254,7 +304,7 @@ def test_update_job_endpoint_partial(client, test_job, _test_user):
     assert body.get("due_date") == current_due_date
     assert body.get("priority") == current_priority
 
-    get_response = client.get("/jobs")
+    get_response = client.get("/jobs", headers=auth_headers)
     get_body = get_response.json()
 
     assert get_response.status_code == status.HTTP_200_OK
@@ -266,24 +316,36 @@ def test_update_job_endpoint_partial(client, test_job, _test_user):
     assert updated_job.get("priority") == current_priority
 
 
-def test_update_nonexisting_job_fails(client):
+def test_update_nonexisting_job_fails(client, auth_headers):
     nonexisting_job_id = "c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13"
     new_description = "Updated description"
 
     response = client.put(
-        f"/jobs/{nonexisting_job_id}", json={"description": new_description}
+        f"/jobs/{nonexisting_job_id}",
+        json={"description": new_description},
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_job_nonexisting_user_fails(client, test_job):
+def test_update_job_nonexisting_user_fails(client, test_job, auth_headers):
     nonexisting_user_id = "3f8c1b9e-7d4a-4e62-9a1c-5f2d8e6b3c71"
     new_description = "Updated description"
 
     response = client.put(
         f"/jobs/{str(test_job.id)}",
         json={"description": new_description, "user_id": nonexisting_user_id},
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_update_job_unauthorized_user_fails(client):
+    response = client.put(
+        "/jobs/c9f7a9b1-8b8a-4b0e-9c2f-6d4d2f7c5e13",
+        json={"description": "Updated description"},
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED

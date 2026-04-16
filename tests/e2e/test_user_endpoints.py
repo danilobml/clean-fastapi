@@ -7,8 +7,10 @@ from src.security.password import verify_password
 from src.users.model.responses import UserResponse
 
 
-def test_get_user_endpoint(client, _test_user, test_user_data, test_user_id):
-    response = client.get(f"/users/{test_user_id}")
+def test_get_user_endpoint(
+    client, _test_user, test_user_data, test_user_id, auth_headers
+):
+    response = client.get(f"/users/{test_user_id}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_200_OK, response.text
 
@@ -22,48 +24,73 @@ def test_get_user_endpoint(client, _test_user, test_user_data, test_user_id):
     assert "hashed_password" not in body
 
 
-def test_get_user_not_found(client, _test_user):
+def test_get_user_not_found(client, _test_user, auth_headers):
     non_existing_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
-    response = client.get(f"/users/{non_existing_id}")
+    response = client.get(f"/users/{non_existing_id}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_get_all_users_endpoint(client, _two_users, test_user_data, test_user_2_data):
-    response = client.get("/users")
+def test_get_user_unauthorized_fails(client, _test_user):
+    response = client.get(f"/users/{_test_user.id}")
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_get_all_users_endpoint(
+    client, _two_users, test_user_data, test_user_2_data, auth_headers, auth_user
+):
+    response = client.get("/users", headers=auth_headers)
 
     body = response.json()
 
     assert response.status_code == status.HTTP_200_OK
     returned_emails = sorted(user.get("email") for user in body)
-    expected_emails = sorted([test_user_data.email, test_user_2_data.email])
+    expected_emails = sorted(
+        [test_user_data.email, test_user_2_data.email, auth_user.email]
+    )
     assert returned_emails == expected_emails
 
 
-def test_delete_user_endpoint(client, _test_user, test_user_id):
-    del_resp = client.delete(f"/users/{test_user_id}")
-    get_resp = client.get(f"/users/{test_user_id}")
+def test_get_all_users_unauthorized_fails(client):
+    response = client.get("/users")
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_delete_user_endpoint(client, _test_user, test_user_id, auth_headers):
+    del_resp = client.delete(f"/users/{test_user_id}", headers=auth_headers)
+    get_resp = client.get(f"/users/{test_user_id}", headers=auth_headers)
 
     assert del_resp.status_code == status.HTTP_204_NO_CONTENT
     assert get_resp.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_nonexisting_user_fails(client, _test_user):
+def test_delete_nonexisting_user_fails(client, _test_user, auth_headers):
     nonexisting_user_id = "b7f6c2a4-3c8f-4c1f-9d7a-2e6b5a9f8d13"
 
-    response = client.delete(f"/users/{nonexisting_user_id}")
+    response = client.delete(f"/users/{nonexisting_user_id}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_user_name_endpoint(client, _test_user, test_user_id, db_session):
+def test_delete_user_unauthorized_fails(client, _test_user):
+    response = client.delete(f"/users/{_test_user.id}")
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_update_user_name_endpoint(
+    client, _test_user, test_user_id, db_session, auth_headers
+):
     new_first_name = "Updated"
     new_last_name = "Name"
 
     response = client.patch(
         f"/users/{test_user_id}",
         json={"first_name": new_first_name, "last_name": new_last_name},
+        headers=auth_headers,
     )
 
     updated_user = db_session.get(User, UUID(test_user_id))
@@ -78,7 +105,7 @@ def test_update_user_name_endpoint(client, _test_user, test_user_id, db_session)
     assert updated_user.last_name == new_last_name
 
 
-def test_update_nonexisting_user_name_fails(client, _test_user):
+def test_update_nonexisting_user_name_fails(client, _test_user, auth_headers):
     new_first_name = "Updated"
     new_last_name = "Name"
 
@@ -87,25 +114,40 @@ def test_update_nonexisting_user_name_fails(client, _test_user):
     response = client.patch(
         f"/users/{nonexisting_user_id}",
         json={"first_name": new_first_name, "last_name": new_last_name},
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_user_name_missing_param_fails(client, _test_user, test_user_id):
+def test_update_user_name_missing_param_fails(
+    client, _test_user, test_user_id, auth_headers
+):
     new_first_name = "Updated"
     new_last_name = ""
 
     response = client.patch(
         f"/users/{test_user_id}",
         json={"first_name": new_first_name, "last_name": new_last_name},
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
+def test_update_user_unauthorized_fails(client, _test_user):
+    new_first_name = "Updated"
+
+    response = client.patch(
+        f"/users/{_test_user.id}",
+        json={"first_name": new_first_name},
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
 def test_change_password_endpoint(
-    client, _test_user, test_user_data, test_user_id, db_session
+    client, _test_user, test_user_data, test_user_id, db_session, auth_headers
 ):
     new_password = "new-pass"
 
@@ -116,6 +158,7 @@ def test_change_password_endpoint(
             "new_password": new_password,
             "new_password_confirm": new_password,
         },
+        headers=auth_headers,
     )
 
     body = response.json()
@@ -128,7 +171,9 @@ def test_change_password_endpoint(
     assert verify_password(new_password, user.hashed_password)
 
 
-def test_change_password_wrong_id_fails(client, _test_user, test_user_data):
+def test_change_password_wrong_id_fails(
+    client, _test_user, test_user_data, auth_headers
+):
     new_password = "new-pass"
     nonexisting_user_id = "b7f6c2a4-3c8f-4c1f-9d7a-2e6b5a9f8d13"
 
@@ -139,12 +184,15 @@ def test_change_password_wrong_id_fails(client, _test_user, test_user_data):
             "new_password": new_password,
             "new_password_confirm": new_password,
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_change_password_wrong_password_fails(client, _test_user, test_user_id):
+def test_change_password_wrong_password_fails(
+    client, _test_user, test_user_id, auth_headers
+):
     new_password = "new-pass"
     wrong_password = "wrong-pass"
 
@@ -155,13 +203,14 @@ def test_change_password_wrong_password_fails(client, _test_user, test_user_id):
             "new_password": new_password,
             "new_password_confirm": new_password,
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 def test_change_password_wrong_password_confirm_fails(
-    client, _test_user, test_user_data, test_user_id
+    client, _test_user, test_user_data, test_user_id, auth_headers
 ):
     new_password = "new-pass"
     wrong_password_confirm = "wrong-pass"
@@ -173,6 +222,7 @@ def test_change_password_wrong_password_confirm_fails(
             "new_password": new_password,
             "new_password_confirm": wrong_password_confirm,
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST

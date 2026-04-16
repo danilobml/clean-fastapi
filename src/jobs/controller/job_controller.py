@@ -11,6 +11,7 @@ from src.jobs.model.requests import CreateJobRequest, UpdateJobRequest
 from src.jobs.model.responses import CompleteJobResponse, CreateJobResponse, JobResponse
 from src.rate_limiting import limiter
 from src.jobs.service import job_service
+from src.security.jwt import CurrentUser
 
 
 job_router = APIRouter(prefix="/jobs")
@@ -18,7 +19,9 @@ job_router = APIRouter(prefix="/jobs")
 
 @job_router.get("/", status_code=status.HTTP_200_OK, response_model=list[JobResponse])
 @limiter.limit("5/hour")
-async def get_all_jobs(request: Request, db: DbSession) -> list[JobResponse]:
+async def get_all_jobs(
+    request: Request, db: DbSession, _current_user: CurrentUser
+) -> list[JobResponse]:
     try:
         jobs = job_service.get_all_jobs(db)
         return [
@@ -43,7 +46,10 @@ async def get_all_jobs(request: Request, db: DbSession) -> list[JobResponse]:
 )
 @limiter.limit("5/hour")
 async def create_job(
-    request: Request, create_job_request: CreateJobRequest, db: DbSession
+    request: Request,
+    create_job_request: CreateJobRequest,
+    db: DbSession,
+    _current_user: CurrentUser,
 ) -> CreateJobResponse:
     try:
         return job_service.create_job(create_job_request, db)
@@ -58,7 +64,7 @@ async def create_job(
 )
 @limiter.limit("5/hour")
 async def complete_job(
-    request: Request, id: UUID, db: DbSession
+    request: Request, id: UUID, db: DbSession, _current_user: CurrentUser
 ) -> CompleteJobResponse:
     try:
         return job_service.complete_job(id, db)
@@ -72,7 +78,9 @@ async def complete_job(
 
 @job_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("5/hour")
-async def delete_job(request: Request, id: UUID, db: DbSession) -> None:
+async def delete_job(
+    request: Request, id: UUID, db: DbSession, _current_user: CurrentUser
+) -> None:
     try:
         job_service.delete_job(id, db)
     except NoResultFound:
@@ -84,7 +92,11 @@ async def delete_job(request: Request, id: UUID, db: DbSession) -> None:
 @job_router.put("/{id}", status_code=status.HTTP_200_OK, response_model=JobResponse)
 @limiter.limit("5/hour")
 async def update_job(
-    request: Request, id: UUID, update_job_request: UpdateJobRequest, db: DbSession
+    request: Request,
+    id: UUID,
+    update_job_request: UpdateJobRequest,
+    db: DbSession,
+    _current_user: CurrentUser,
 ) -> JobResponse:
     try:
         return job_service.update_job(id, update_job_request, db)
