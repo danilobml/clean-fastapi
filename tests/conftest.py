@@ -14,6 +14,7 @@ from src.db.base import Base
 from src.db.core import get_db
 from src.entities.job import Job, Priority
 from src.entities.user import User
+from src.security.jwt import create_access_token
 from src.security.password import get_hashed_password
 from src.rate_limiting import limiter
 
@@ -207,3 +208,27 @@ def three_test_jobs(db_session, _two_users):
     db_session.refresh(job_3)
 
     return job_1, job_2, job_3
+
+
+@pytest.fixture(scope="function")
+def auth_user(db_session):
+    user = User(
+        id=UUID("9c3e5a1f-6b2d-4d8e-8a7f-2f9c6b1e4a73"),
+        first_name="Auth",
+        last_name="User",
+        email="auth_user@mail.com",
+        hashed_password=get_hashed_password("auth-pass"),
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture(scope="function")
+def auth_headers(auth_user):
+    token = create_access_token(
+        email=auth_user.email, user_id=auth_user.id, expire_delta=timedelta(minutes=30)
+    )
+
+    return {"Authorization": f"Bearer {token}"}
